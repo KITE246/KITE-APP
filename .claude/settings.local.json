@@ -65,7 +65,13 @@
       "Bash(ps -W)",
       "Read(//c/Users/praga/KITE-APP/src-tauri/**)",
       "Bash(cd /c/Users/praga/KITE-APP && grep -n \"window.kiteConnections = \\(function\" src/index.html | head; grep -n \"AGENTS ENGINE \\(JS orchestrator\" src/index.html | head)",
-      "Bash(python -)"
+      "Bash(python -)",
+      "Bash(awk 'NR>=1')",
+      "Bash(npx vite *)",
+      "Read(//tmp/**)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:1420/)",
+      "Bash(node -e ' *)",
+      "Bash(grep -n \"r=await kiteAsk\\(\\\\[{role:'system',content:sys}\\\\|const r=await kiteAsk\\(\\\\[\" src/index.html)"
     ]
   }
 }
