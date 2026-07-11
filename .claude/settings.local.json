@@ -54,7 +54,14 @@
       "Bash(awk '{print \"app running, PID\",$2}')",
       "Bash(sed 's/\\\\x1b\\\\[[0-9;]*m//g' \"C:\\\\Users\\\\praga\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-praga-KITE-APP\\\\524c53d8-12f2-4613-a540-f7cb87b3b593\\\\tasks\\\\b0np6ajyt.output\")",
       "Bash(grep -iE \"Running \\\\`target|Finished|error\")",
-      "Bash(curl -s -m 25 -D - -o /dev/null \"https://image.pollinations.ai/prompt/a%20mountain?width=512&height=512&nologo=true&seed=123\")"
+      "Bash(curl -s -m 25 -D - -o /dev/null \"https://image.pollinations.ai/prompt/a%20mountain?width=512&height=512&nologo=true&seed=123\")",
+      "Bash(cargo check *)",
+      "Bash(npm run *)",
+      "Bash(tee \"C:/Users/praga/AppData/Local/Temp/claude/C--Users-praga-KITE-APP/5ebea42f-8c10-42a2-80ba-07a4efed3ba2/scratchpad/tauri-dev.log\")",
+      "PowerShell($c = Get-NetTCPConnection -LocalPort 1420 -State Listen -ErrorAction SilentlyContinue; if\\($c\\){ $c | Select-Object -First 1 LocalPort,OwningProcess; Get-Process -Id \\($c.OwningProcess | Select-Object -First 1\\) | Select-Object Id,ProcessName,StartTime } else { \"nothing on 1420\" })",
+      "PowerShell(try { Get-Process -Id 17220 -ErrorAction Stop | Select-Object Id,ProcessName,Path } catch { \"pid 17220 not found: $\\($_.Exception.Message\\)\" }; $tauri = Get-Process | Where-Object { $_.ProcessName -match 'kite-app|kite' } ; if\\($tauri\\){ \"TAURI RUNNING:\"; $tauri | Select-Object Id,ProcessName } else { \"no kite-app process\" })",
+      "Bash(tee \"C:/Users/praga/AppData/Local/Temp/claude/C--Users-praga-KITE-APP/5ebea42f-8c10-42a2-80ba-07a4efed3ba2/scratchpad/tauri-dev2.log\")",
+      "Bash(echo \"exit: $?\")"
     ]
   }
 }

@@ -96,6 +96,50 @@ body.light .theme-toggle{border-color:#ccc;color:#888}
 .tab-panel.active{display:block}
 /* Kite (opencode) tab fills the viewport tightly, no giant bottom gap */
 #tab-7.tab-panel.active{margin:-8px 0}
+#tab-8.tab-panel.active{margin:-8px 0}
+/* ── Real terminal (xterm.js + ConPTY): tabs, splits, toolbar ── */
+.term-win{min-height:560px}
+/* tab bar */
+.term-tabbar{display:flex;align-items:flex-end;gap:2px;padding:5px 8px 0;background:#161616;border-bottom:1px solid #202020;flex:none;overflow-x:auto}
+.term-tab{display:flex;align-items:center;gap:8px;padding:6px 8px 7px 12px;font-family:'Space Mono',monospace;font-size:10.5px;color:#9a9a9a;background:transparent;border:none;border-radius:6px 6px 0 0;cursor:pointer;white-space:nowrap;transition:background .12s,color .12s}
+.term-tab:hover{background:#1d1d1d;color:#c8c8c8}
+.term-tab.active{background:#0f0f0f;color:var(--teal)}
+.term-tab-x{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:4px;font-size:12px;line-height:1;color:#6a6a6a}
+.term-tab-x:hover{background:rgba(255,107,107,.18);color:var(--coral)}
+.term-tab-plus{flex:none;margin:0 2px 4px;width:24px;height:24px;border:none;border-radius:5px;background:transparent;color:#8a8a8a;font-size:15px;line-height:1;cursor:pointer}
+.term-tab-plus:hover{background:rgba(45,212,191,.12);color:var(--teal)}
+/* toolbar */
+.term-toolbar{display:flex;align-items:center;gap:6px;padding:6px 10px;background:#0f0f0f;border-bottom:1px solid #1b1b1b;flex:none}
+.term-btn{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.3px;color:#b8b8b8;background:#1a1a1a;border:1px solid #262626;border-radius:5px;padding:5px 11px;cursor:pointer;white-space:nowrap;transition:color .12s,border-color .12s,background .12s}
+.term-btn:hover{color:var(--teal);border-color:rgba(45,212,191,.45);background:#1e1e1e}
+.term-btn-group{display:flex}
+.term-btn-group .term-btn:first-child{border-radius:5px 0 0 5px;border-right:none}
+.term-btn-dd{border-radius:0 5px 5px 0;padding:5px 7px}
+.term-toolbar-right{margin-left:auto;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.4px;color:#7a7a7a;background:#141414;border:1px solid #222;border-radius:5px;padding:5px 11px}
+/* workspace: tab pages + split panes */
+.term-workspace{position:relative;flex:1;min-height:460px;display:flex;background:#050505;overflow:hidden}
+.term-tabpage{flex:1;display:flex;min-width:0;min-height:0;padding:4px;gap:4px}
+.term-split{flex:1;display:flex;gap:4px;min-width:0;min-height:0}
+.term-split-row{flex-direction:row}
+.term-split-col{flex-direction:column}
+.term-pane{flex:1;position:relative;min-width:0;min-height:0;background:#0a0a0a;border:1px solid #1d1d1d;border-radius:5px;overflow:hidden;transition:border-color .12s,box-shadow .12s}
+.term-pane.focused{border-color:rgba(45,212,191,.55);box-shadow:0 0 0 1px rgba(45,212,191,.22)}
+.term-pane-host{position:absolute;inset:8px 4px 4px 10px}
+.term-pane .xterm{height:100%}
+.term-pane .xterm-viewport{background:transparent!important}
+/* thin dark scrollbar */
+.term-pane .xterm-viewport::-webkit-scrollbar{width:8px}
+.term-pane .xterm-viewport::-webkit-scrollbar-track{background:transparent}
+.term-pane .xterm-viewport::-webkit-scrollbar-thumb{background:#242424;border-radius:4px}
+.term-pane .xterm-viewport::-webkit-scrollbar-thumb:hover{background:#323232}
+/* menus (context + quick launch) */
+.term-menu{position:fixed;z-index:99999;display:none;min-width:170px;padding:5px;background:#151515;border:1px solid #2a2a2a;border-radius:9px;box-shadow:0 14px 40px rgba(0,0,0,.65);font-family:var(--sans)}
+.term-menu.open{display:block}
+.term-menu-item{padding:7px 12px;font-size:12.5px;color:#cfcfcf;border-radius:5px;cursor:pointer;white-space:nowrap}
+.term-menu-item:hover{background:rgba(45,212,191,.13);color:var(--teal)}
+.term-menu-sep{height:1px;margin:4px 4px;background:#262626}
+#term-status{color:var(--teal)}
+#term-status.dead{color:var(--coral)}
 .main.main-kite{padding:16px 20px 20px}
 @keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 
@@ -711,6 +755,7 @@ body.light .kv-bubble{background:linear-gradient(135deg,rgba(250,250,252,.92),rg
   </div>
   <div class="tab-nav">
     <button class="tab-btn active" data-idx="7" onclick="switchTab(7)">Chat</button>
+    <button class="tab-btn" data-idx="8" onclick="switchTab(8)">Terminal</button>
     <button class="tab-btn" data-idx="4" onclick="switchTab(4)">API Keys</button>
   </div>
   <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn">
@@ -1046,6 +1091,61 @@ body.light .kv-bubble{background:linear-gradient(135deg,rgba(250,250,252,.92),rg
     </div>
   </div>
 </div>
+
+<!-- ═══════════ TAB 8 · TERMINAL (real ConPTY shell) ═══════════ -->
+<div class="tab-panel" id="tab-8">
+  <div class="oc-canvas">
+    <div class="oc-win term-win">
+      <!-- macOS title bar -->
+      <div class="oc-titlebar">
+        <div class="oc-dots">
+          <span class="oc-dot oc-red"></span>
+          <span class="oc-dot oc-yellow"></span>
+          <span class="oc-dot oc-green"></span>
+        </div>
+        <div class="fox-logo" style="width:16px;height:16px;margin-right:6px;filter:drop-shadow(0 0 4px rgba(45,212,191,.4))" role="img" aria-label="Kite"></div>
+        <div class="oc-title">Terminal</div>
+      </div>
+      <!-- terminal tab bar -->
+      <div class="term-tabbar">
+        <div class="term-tabs" id="term-tabs" style="display:flex;align-items:flex-end;gap:2px"></div>
+        <button class="term-tab-plus" id="term-tab-plus" title="New tab (Ctrl+Shift+T)">+</button>
+      </div>
+      <!-- toolbar -->
+      <div class="term-toolbar">
+        <div class="term-btn-group">
+          <button class="term-btn" id="term-btn-newtab" title="New tab (Ctrl+Shift+T)">+ New Tab</button>
+          <button class="term-btn term-btn-dd" id="term-newtab-dd" title="Pick a shell">▾</button>
+        </div>
+        <button class="term-btn" id="term-btn-split-r" title="Split right">Split Right ⎸</button>
+        <button class="term-btn" id="term-btn-split-d" title="Split down">Split Down —</button>
+        <button class="term-btn" id="term-btn-clear" title="Clear focused pane">Clear</button>
+        <span class="term-toolbar-right" id="term-shell-label">PowerShell</span>
+      </div>
+      <!-- workspace (tab pages with split panes) -->
+      <div class="term-workspace" id="term-workspace"></div>
+      <!-- status bar -->
+      <div class="oc-statusbar">
+        <span class="oc-status-left" id="term-status">● live</span>
+        <span class="oc-status-right">ConPTY</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- terminal menus (fixed-position) -->
+<div class="term-menu" id="term-ctx">
+  <div class="term-menu-item" data-act="copy">Copy</div>
+  <div class="term-menu-item" data-act="paste">Paste</div>
+  <div class="term-menu-sep"></div>
+  <div class="term-menu-item" data-act="clear">Clear</div>
+  <div class="term-menu-sep"></div>
+  <div class="term-menu-item" data-act="split-r">Split Right</div>
+  <div class="term-menu-item" data-act="split-d">Split Down</div>
+  <div class="term-menu-sep"></div>
+  <div class="term-menu-item" data-act="close">Close Pane</div>
+</div>
+<div class="term-menu" id="term-newtab-menu"></div>
 
 </div><!-- /main -->
 
@@ -1627,6 +1727,7 @@ function switchTab(i){
   if(mainEl)mainEl.classList.toggle('main-kite',i===7);
   if(i===4) requestAnimationFrame(()=>{if(typeof loadApiKeysUI==='function')loadApiKeysUI();});
   if(i===7) requestAnimationFrame(()=>{if(typeof chatInit==='function')chatInit();});
+  if(i===8){window.__wantTerm=true;requestAnimationFrame(()=>{if(window.kiteTerm)window.kiteTerm.init();});}
 }
 
 /* ═══════════ AI PROVIDERS REGISTRY ═══════════ */
@@ -3521,6 +3622,382 @@ const kiteVoice=(function(){
     }
   };
 })();
+</script>
+
+<!-- ═══════════ Real Terminal (xterm.js + ConPTY): tabs + split panes ═══════════ -->
+<script type="module">
+  import { Terminal } from '@xterm/xterm';
+  import { FitAddon } from '@xterm/addon-fit';
+  import '@xterm/xterm/css/xterm.css';
+  import { invoke } from '@tauri-apps/api/core';
+  import { listen } from '@tauri-apps/api/event';
+
+  const $ = id => document.getElementById(id);
+  const MAX_PANES = 4;
+  const THEME = {
+    background: '#0a0a0a', foreground: '#e6e6e6',
+    cursor: '#2dd4bf', cursorAccent: '#0a0a0a',
+    selectionBackground: 'rgba(45,212,191,0.30)',
+    black: '#0a0a0a', red: '#ff6b6b', green: '#2dd4bf', yellow: '#e6c07b',
+    blue: '#61afef', magenta: '#a78bfa', cyan: '#56b6c2', white: '#d0d0d0',
+    brightBlack: '#5a5a5a', brightRed: '#ff8787', brightGreen: '#5eead4',
+    brightYellow: '#ffd98a', brightBlue: '#8ac6ff', brightMagenta: '#c4b5fd',
+    brightCyan: '#7fd3de', brightWhite: '#ffffff'
+  };
+
+  let ready = false, tabs = [], active = null, ctxPane = null;
+  let shells = [{ id: 'powershell', label: 'PowerShell', cmd: 'powershell.exe', args: [] }];
+  const bySession = new Map();   // PTY session id -> pane
+
+  function b64ToBytes(b64){
+    const bin = atob(b64);
+    const out = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+
+  /* ── layout tree: leaf = {pane}, split = {dir:'row'|'col', a, b} ── */
+  const leaves = n => n.pane ? [n] : [...leaves(n.a), ...leaves(n.b)];
+  const paneCount = tab => leaves(tab.root).length;
+
+  function replaceLeaf(tab, target, node){
+    const rec = n => {
+      if (n.pane === target) return node;
+      if (n.dir){ n.a = rec(n.a); n.b = rec(n.b); }
+      return n;
+    };
+    tab.root = rec(tab.root);
+  }
+  function removeLeaf(tab, pane){
+    const rec = n => {
+      if (n.pane) return n;
+      if (n.a.pane === pane) return rec(n.b);
+      if (n.b.pane === pane) return rec(n.a);
+      n.a = rec(n.a); n.b = rec(n.b); return n;
+    };
+    tab.root = rec(tab.root);
+  }
+
+  function safeFit(pane){
+    try {
+      if (pane.host.isConnected && pane.host.offsetWidth > 20 && pane.host.offsetHeight > 20)
+        pane.fit.fit();
+    } catch(_){}
+  }
+  const fitAll = tab => leaves(tab.root).forEach(l => safeFit(l.pane));
+
+  /* ── chrome (toolbar shell label + status bar) ── */
+  function updateChrome(){
+    const pane = active && active.focused;
+    const lbl = $('term-shell-label');
+    if (lbl) lbl.textContent = pane ? pane.shell.label : '—';
+    const st = $('term-status');
+    if (st){
+      const dead = !pane || pane.dead;
+      st.textContent = dead ? '● exited' : '● live';
+      st.classList.toggle('dead', dead);
+    }
+  }
+  function flashStatus(msg){
+    const st = $('term-status');
+    if (!st) return;
+    st.textContent = '● ' + msg;
+    st.classList.add('dead');
+    setTimeout(updateChrome, 1600);
+  }
+
+  /* ── panes ── */
+  function makePane(tab, shell){
+    const pane = { tab, shell, sid: null, dead: false };
+    pane.el = document.createElement('div');
+    pane.el.className = 'term-pane';
+    pane.host = document.createElement('div');
+    pane.host.className = 'term-pane-host';
+    pane.el.appendChild(pane.host);
+
+    pane.term = new Terminal({
+      fontFamily: "'Cascadia Code','Cascadia Mono',Consolas,'Courier New',ui-monospace,monospace",
+      fontSize: 14,
+      lineHeight: 1.2,
+      cursorBlink: true,
+      allowProposedApi: true,
+      theme: THEME
+    });
+    pane.fit = new FitAddon();
+    pane.term.loadAddon(pane.fit);
+    pane.term.open(pane.host);
+
+    pane.term.onData(d => { if (pane.sid != null && !pane.dead) invoke('term_write', { id: pane.sid, data: d }); });
+    pane.term.onResize(({ rows, cols }) => { if (pane.sid != null && !pane.dead) invoke('term_resize', { id: pane.sid, rows, cols }); });
+
+    // Ctrl+Shift+T / W inside xterm (it swallows keys otherwise).
+    pane.term.attachCustomKeyEventHandler(ev => {
+      if (ev.type === 'keydown' && ev.ctrlKey && ev.shiftKey && !ev.altKey){
+        const k = ev.key.toLowerCase();
+        if (k === 't'){ ev.preventDefault(); newTab(); return false; }
+        if (k === 'w'){ ev.preventDefault(); closeTab(pane.tab); return false; }
+      }
+      return true;
+    });
+
+    pane.el.addEventListener('pointerdown', () => focusPane(pane));
+    pane.el.addEventListener('contextmenu', e => {
+      e.preventDefault();
+      focusPane(pane);
+      showCtxMenu(e.clientX, e.clientY, pane);
+    });
+    new ResizeObserver(() => safeFit(pane)).observe(pane.host);
+    return pane;
+  }
+
+  async function openPane(pane){
+    await new Promise(r => requestAnimationFrame(r));   // let layout settle so fit() is real
+    safeFit(pane);
+    try {
+      const sid = await invoke('term_open', {
+        rows: pane.term.rows || 24, cols: pane.term.cols || 80,
+        shell: pane.shell.cmd, args: pane.shell.args
+      });
+      pane.sid = sid;
+      bySession.set(sid, pane);
+    } catch(e){
+      pane.dead = true;
+      pane.term.write('\x1b[38;5;209m[failed to start ' + pane.shell.label + ': ' + e + ']\x1b[0m\r\n');
+    }
+    updateChrome();
+  }
+
+  function destroyPane(pane){
+    if (pane.sid != null){
+      bySession.delete(pane.sid);
+      invoke('term_close', { id: pane.sid }).catch(() => {});
+    }
+    try { pane.term.dispose(); } catch(_){}
+    pane.el.remove();
+  }
+
+  function focusPane(pane){
+    const tab = pane.tab;
+    tab.focused = pane;
+    if (tab !== active) return;
+    tab.el.querySelectorAll('.term-pane').forEach(e => e.classList.remove('focused'));
+    pane.el.classList.add('focused');
+    pane.term.focus();
+    updateChrome();
+  }
+
+  /* ── layout render ── */
+  function build(node){
+    if (node.pane) return node.pane.el;
+    const d = document.createElement('div');
+    d.className = 'term-split ' + (node.dir === 'row' ? 'term-split-row' : 'term-split-col');
+    d.appendChild(build(node.a));
+    d.appendChild(build(node.b));
+    return d;
+  }
+  function renderLayout(tab){
+    tab.el.replaceChildren(build(tab.root));
+    requestAnimationFrame(() => fitAll(tab));
+  }
+
+  async function split(dir){
+    const tab = active;
+    if (!tab || !tab.focused) return;
+    if (paneCount(tab) >= MAX_PANES){ flashStatus('max ' + MAX_PANES + ' panes'); return; }
+    const target = tab.focused;
+    const pane = makePane(tab, target.shell);
+    replaceLeaf(tab, target, { dir, a: { pane: target }, b: { pane } });
+    renderLayout(tab);
+    await openPane(pane);
+    focusPane(pane);
+  }
+
+  function closePane(pane){
+    const tab = pane.tab;
+    if (paneCount(tab) <= 1){ closeTab(tab); return; }
+    removeLeaf(tab, pane);
+    destroyPane(pane);
+    renderLayout(tab);
+    focusPane(leaves(tab.root)[0].pane);
+  }
+
+  /* ── tabs ── */
+  function renderTabbar(){
+    const bar = $('term-tabs');
+    bar.replaceChildren();
+    tabs.forEach(tab => {
+      const b = document.createElement('button');
+      b.className = 'term-tab' + (tab === active ? ' active' : '');
+      const s = document.createElement('span');
+      s.textContent = tab.shell.label;
+      b.appendChild(s);
+      const x = document.createElement('span');
+      x.className = 'term-tab-x';
+      x.textContent = '×';
+      x.title = 'Close tab (Ctrl+Shift+W)';
+      x.addEventListener('click', e => { e.stopPropagation(); closeTab(tab); });
+      b.appendChild(x);
+      b.addEventListener('click', () => selectTab(tab));
+      bar.appendChild(b);
+    });
+  }
+
+  function selectTab(tab){
+    active = tab;
+    tabs.forEach(t => { t.el.style.display = t === tab ? 'flex' : 'none'; });
+    renderTabbar();
+    updateChrome();
+    requestAnimationFrame(() => {
+      fitAll(tab);
+      if (tab.focused) focusPane(tab.focused);
+    });
+  }
+
+  async function newTab(shell){
+    shell = shell || shells[0];
+    const tab = { shell, el: document.createElement('div'), root: null, focused: null };
+    tab.el.className = 'term-tabpage';
+    $('term-workspace').appendChild(tab.el);
+    tabs.push(tab);
+    const pane = makePane(tab, shell);
+    tab.root = { pane };
+    tab.focused = pane;
+    selectTab(tab);
+    renderLayout(tab);
+    await openPane(pane);
+    focusPane(pane);
+  }
+
+  function closeTab(tab){
+    leaves(tab.root).forEach(l => destroyPane(l.pane));
+    tab.el.remove();
+    const i = tabs.indexOf(tab);
+    if (i >= 0) tabs.splice(i, 1);
+    if (tab === active) active = null;
+    if (!tabs.length){ newTab(); return; }   // always keep one live tab
+    selectTab(tabs[Math.min(i, tabs.length - 1)]);
+  }
+
+  /* ── menus ── */
+  function showCtxMenu(x, y, pane){
+    ctxPane = pane;
+    const m = $('term-ctx');
+    m.classList.add('open');
+    m.style.left = Math.min(x, innerWidth - 200) + 'px';
+    m.style.top = Math.min(y, innerHeight - 260) + 'px';
+  }
+  function buildShellMenu(){
+    const m = $('term-newtab-menu');
+    m.replaceChildren();
+    shells.forEach(s => {
+      const it = document.createElement('div');
+      it.className = 'term-menu-item';
+      it.textContent = s.label;
+      it.addEventListener('click', () => { m.classList.remove('open'); newTab(s); });
+      m.appendChild(it);
+    });
+  }
+
+  /* ── one-time wiring ── */
+  function wire(){
+    $('term-tab-plus').addEventListener('click', () => newTab());
+    $('term-btn-newtab').addEventListener('click', () => newTab());
+    $('term-newtab-dd').addEventListener('click', e => {
+      const m = $('term-newtab-menu');
+      const r = e.currentTarget.getBoundingClientRect();
+      m.style.left = r.left + 'px';
+      m.style.top = (r.bottom + 4) + 'px';
+      m.classList.toggle('open');
+    });
+    $('term-btn-split-r').addEventListener('click', () => split('row'));
+    $('term-btn-split-d').addEventListener('click', () => split('col'));
+    $('term-btn-clear').addEventListener('click', () => { if (active && active.focused) active.focused.term.clear(); });
+
+    // context-menu actions
+    $('term-ctx').addEventListener('click', async e => {
+      const item = e.target.closest('[data-act]');
+      if (!item || !ctxPane) return;
+      $('term-ctx').classList.remove('open');
+      const p = ctxPane;
+      const act = item.dataset.act;
+      if (act === 'copy'){
+        const s = p.term.getSelection();
+        if (s) try { await navigator.clipboard.writeText(s); } catch(_){}
+      } else if (act === 'paste'){
+        try { const t = await navigator.clipboard.readText(); if (t) p.term.paste(t); } catch(_){}
+      } else if (act === 'clear'){
+        p.term.clear();
+      } else if (act === 'split-r'){
+        split('row');
+      } else if (act === 'split-d'){
+        split('col');
+      } else if (act === 'close'){
+        closePane(p);
+      }
+    });
+
+    // click-away closes menus (pointerdown so it beats the button's click)
+    document.addEventListener('pointerdown', e => {
+      if (!e.target.closest('#term-ctx')) $('term-ctx').classList.remove('open');
+      if (!e.target.closest('#term-newtab-menu') && !e.target.closest('#term-newtab-dd'))
+        $('term-newtab-menu').classList.remove('open');
+    });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape'){
+        $('term-ctx').classList.remove('open');
+        $('term-newtab-menu').classList.remove('open');
+      }
+      // Ctrl+Shift+T/W when focus is outside a pane (inside, xterm's handler covers it)
+      if (!ready || !$('tab-8').classList.contains('active')) return;
+      if (e.target.closest && e.target.closest('.term-pane')) return;
+      if (e.ctrlKey && e.shiftKey && !e.altKey){
+        const k = e.key.toLowerCase();
+        if (k === 't'){ e.preventDefault(); newTab(); }
+        else if (k === 'w'){ e.preventDefault(); if (active) closeTab(active); }
+      }
+    });
+    window.addEventListener('resize', () => { if (active) fitAll(active); });
+  }
+
+  /* ── public API ── */
+  const kiteTerm = {
+    async init(){
+      if (ready){
+        if (active) requestAnimationFrame(() => {
+          fitAll(active);
+          if (active.focused) focusPane(active.focused);
+        });
+        return;
+      }
+      ready = true;
+
+      try {
+        const s = await invoke('term_shells');
+        if (Array.isArray(s) && s.length) shells = s;
+      } catch(_){}
+      buildShellMenu();
+      wire();
+
+      await listen('term-output', e => {
+        const p = bySession.get(e.payload.id);
+        if (p) p.term.write(b64ToBytes(e.payload.data));
+      });
+      await listen('term-exit', e => {
+        const p = bySession.get(e.payload);
+        if (p){
+          p.dead = true;
+          p.term.write('\r\n\x1b[38;5;209m[shell exited]\x1b[0m\r\n');
+          updateChrome();
+        }
+      });
+
+      await newTab(shells[0]);
+    }
+  };
+
+  window.kiteTerm = kiteTerm;
+  // If the tab was clicked before this module finished loading, honour it now.
+  if (window.__wantTerm) kiteTerm.init();
 </script>
 </body>
 </html>

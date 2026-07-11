@@ -2,7 +2,14 @@
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::io::{Read, Write};
 use std::process::Command;
+use std::sync::atomic::{AtomicU32, Ordering};
+use std::sync::Mutex;
+
+use base64::Engine;
+use portable_pty::{native_pty_system, Child, CommandBuilder, MasterPty, PtySize};
+use tauri::{Emitter, Manager, State};
 
 #[derive(Deserialize)]
 struct ProxyRequest {
@@ -75,7 +82,6 @@ struct GroqTranscribeReq {
 /// and avoid browser CORS. Returns Groq's raw JSON body ({"text": "..."}).
 #[tauri::command]
 async fn groq_transcribe(req: GroqTranscribeReq) -> Result<String, String> {
-    use base64::Engine;
     let bytes = base64::engine::general_purpose::STANDARD
         .decode(req.audio_b64.trim())
         .map_err(|e| format!("bad audio encoding: {}", e))?;
@@ -115,7 +121,6 @@ async fn groq_transcribe(req: GroqTranscribeReq) -> Result<String, String> {
 /// http_proxy command returns text, which corrupts binary MP3 data).
 #[tauri::command]
 async fn tts_fetch(url: String) -> Result<String, String> {
-    use base64::Engine;
     let client = reqwest::Client::new();
     let resp = client
         .get(&url)
@@ -145,7 +150,6 @@ struct FetchBytesReq {
 /// through http_proxy (which stringifies) or native fetch (CORS/auth).
 #[tauri::command]
 async fn fetch_bytes(req: FetchBytesReq) -> Result<String, String> {
-    use base64::Engine;
     let client = reqwest::Client::new();
     let method = match req.method.as_deref().unwrap_or("GET") {
         "POST" => reqwest::Method::POST,
@@ -190,14 +194,240 @@ fn open_mic_settings() -> Result<(), String> {
     Ok(())
 }
 
+// ─────────────────────────── TERMINAL (ConPTY) ───────────────────────────
+// Real shell sessions running inside pseudo terminals. Multiple sessions are
+// kept in a registry keyed by id so the frontend can drive several tabs and
+// split panes at once. Output streams to xterm.js as base64 `term-output`
+// events; keystrokes come back via `term_write`.
+
+/// One live PTY session. `master` is kept for resize; `writer` feeds stdin;
+/// `child` is held so we can kill it on close.
+struct TermSession {
+    master: Box<dyn MasterPty + Send>,
+    writer: Box<dyn Write + Send>,
+    child: Box<dyn Child + Send + Sync>,
+}
+
+#[derive(Default)]
+struct TermState {
+    sessions: Mutex<HashMap<u32, TermSession>>,
+    next_id: AtomicU32,
+}
+
+#[derive(Clone, Serialize)]
+struct TermOutput {
+    id: u32,
+    data: String,
+}
+
+#[derive(Serialize)]
+struct ShellInfo {
+    id: String,
+    label: String,
+    cmd: String,
+    args: Vec<String>,
+}
+
+/// Enumerate the shells available on this machine for the quick-launch menu.
+/// PowerShell and CMD are always present on Windows; Git Bash and WSL are
+/// included only when found on disk.
+#[tauri::command]
+fn term_shells() -> Vec<ShellInfo> {
+    let mut shells = vec![
+        ShellInfo {
+            id: "powershell".into(),
+            label: "PowerShell".into(),
+            cmd: "powershell.exe".into(),
+            args: vec![],
+        },
+        ShellInfo {
+            id: "cmd".into(),
+            label: "CMD".into(),
+            cmd: "cmd.exe".into(),
+            args: vec![],
+        },
+    ];
+
+    let mut git_candidates: Vec<String> = vec![
+        "C:\\Program Files\\Git\\bin\\bash.exe".into(),
+        "C:\\Program Files (x86)\\Git\\bin\\bash.exe".into(),
+    ];
+    if let Ok(lad) = std::env::var("LOCALAPPDATA") {
+        git_candidates.push(format!("{}\\Programs\\Git\\bin\\bash.exe", lad));
+    }
+    for p in git_candidates {
+        if std::path::Path::new(&p).exists() {
+            shells.push(ShellInfo {
+                id: "gitbash".into(),
+                label: "Git Bash".into(),
+                cmd: p,
+                args: vec!["-i".into(), "-l".into()],
+            });
+            break;
+        }
+    }
+
+    let windir = std::env::var("WINDIR").unwrap_or_else(|_| "C:\\Windows".into());
+    if std::path::Path::new(&format!("{}\\System32\\wsl.exe", windir)).exists() {
+        shells.push(ShellInfo {
+            id: "wsl".into(),
+            label: "WSL".into(),
+            cmd: "wsl.exe".into(),
+            args: vec![],
+        });
+    }
+
+    shells
+}
+
+/// Spawn a shell inside a new PTY sized `rows`x`cols` and return its session
+/// id. A background thread pumps PTY output to the `term-output` event and
+/// announces death via `term-exit`.
+#[tauri::command]
+fn term_open(
+    app: tauri::AppHandle,
+    state: State<TermState>,
+    rows: u16,
+    cols: u16,
+    shell: Option<String>,
+    args: Option<Vec<String>>,
+) -> Result<u32, String> {
+    let pty_system = native_pty_system();
+    let pair = pty_system
+        .openpty(PtySize {
+            rows,
+            cols,
+            pixel_width: 0,
+            pixel_height: 0,
+        })
+        .map_err(|e| e.to_string())?;
+
+    let sh = shell.unwrap_or_else(|| {
+        if cfg!(windows) {
+            "powershell.exe".into()
+        } else {
+            "bash".into()
+        }
+    });
+    let mut cmd = CommandBuilder::new(sh);
+    if let Some(a) = args {
+        cmd.args(a);
+    }
+    if let Ok(home) = std::env::var(if cfg!(windows) { "USERPROFILE" } else { "HOME" }) {
+        cmd.cwd(home);
+    }
+
+    let child = pair
+        .slave
+        .spawn_command(cmd)
+        .map_err(|e| e.to_string())?;
+    // Drop the slave so the reader sees EOF when the child exits.
+    drop(pair.slave);
+
+    let id = state.next_id.fetch_add(1, Ordering::Relaxed) + 1;
+    let mut reader = pair.master.try_clone_reader().map_err(|e| e.to_string())?;
+    let writer = pair.master.take_writer().map_err(|e| e.to_string())?;
+
+    let app2 = app.clone();
+    std::thread::spawn(move || {
+        let mut buf = [0u8; 8192];
+        loop {
+            match reader.read(&mut buf) {
+                Ok(0) => break,
+                Ok(n) => {
+                    let b64 = base64::engine::general_purpose::STANDARD.encode(&buf[..n]);
+                    if app2
+                        .emit("term-output", TermOutput { id, data: b64 })
+                        .is_err()
+                    {
+                        break;
+                    }
+                }
+                Err(_) => break,
+            }
+        }
+        // Session is gone — drop our bookkeeping and tell the UI.
+        if let Some(st) = app2.try_state::<TermState>() {
+            if let Ok(mut map) = st.sessions.lock() {
+                map.remove(&id);
+            }
+        }
+        let _ = app2.emit("term-exit", id);
+    });
+
+    state
+        .sessions
+        .lock()
+        .map_err(|e| e.to_string())?
+        .insert(
+            id,
+            TermSession {
+                master: pair.master,
+                writer,
+                child,
+            },
+        );
+    Ok(id)
+}
+
+/// Write user input (keystrokes / paste) to a session's stdin.
+#[tauri::command]
+fn term_write(state: State<TermState>, id: u32, data: String) -> Result<(), String> {
+    let mut map = state.sessions.lock().map_err(|e| e.to_string())?;
+    if let Some(s) = map.get_mut(&id) {
+        s.writer
+            .write_all(data.as_bytes())
+            .map_err(|e| e.to_string())?;
+        s.writer.flush().map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
+/// Resize a session's PTY when the xterm fit-addon reflows.
+#[tauri::command]
+fn term_resize(state: State<TermState>, id: u32, rows: u16, cols: u16) -> Result<(), String> {
+    let map = state.sessions.lock().map_err(|e| e.to_string())?;
+    if let Some(s) = map.get(&id) {
+        s.master
+            .resize(PtySize {
+                rows,
+                cols,
+                pixel_width: 0,
+                pixel_height: 0,
+            })
+            .map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
+/// Kill one session and remove it from the registry.
+#[tauri::command]
+fn term_close(state: State<TermState>, id: u32) -> Result<(), String> {
+    let sess = state
+        .sessions
+        .lock()
+        .map_err(|e| e.to_string())?
+        .remove(&id);
+    if let Some(mut s) = sess {
+        let _ = s.child.kill();
+    }
+    Ok(())
+}
+
 fn main() {
     tauri::Builder::default()
+        .manage(TermState::default())
         .invoke_handler(tauri::generate_handler![
             http_proxy,
             groq_transcribe,
             tts_fetch,
             fetch_bytes,
-            open_mic_settings
+            open_mic_settings,
+            term_shells,
+            term_open,
+            term_write,
+            term_resize,
+            term_close
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
