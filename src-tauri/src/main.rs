@@ -675,9 +675,422 @@ fn pick_folder() -> Option<String> {
         .map(|p| p.to_string_lossy().to_string())
 }
 
+// ─────────────────────────── GMAIL (IMAP + SMTP) ───────────────────────────
+// Gmail with an app password speaks IMAP (read/search) and SMTP (send) — not
+// HTTP — so it can't go through the fetch/http_proxy path the other Connections
+// services use. These commands run the native protocols in Rust. Credentials
+// come from the frontend per call (stored only in the browser's localStorage);
+// nothing is persisted here.
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct GmailReq {
+    address: String,
+    password: String,
+    #[serde(default)]
+    count: u32,
+    #[serde(default)]
+    query: String,
+    #[serde(default)]
+    id: String,
+    #[serde(default)]
+    to: String,
+    #[serde(default)]
+    subject: String,
+    #[serde(default)]
+    body: String,
+}
+
+type GmailSession = imap::Session<native_tls::TlsStream<std::net::TcpStream>>;
+
+fn gmail_session(address: &str, password: &str) -> Result<GmailSession, String> {
+    let tls = native_tls::TlsConnector::builder()
+        .build()
+        .map_err(|e| e.to_string())?;
+    let client = imap::connect(("imap.gmail.com", 993), "imap.gmail.com", &tls)
+        .map_err(|e| format!("imap connect failed: {}", e))?;
+    client.login(address, password).map_err(|(e, _)| {
+        format!(
+            "imap login failed: {} — use a Gmail App Password (myaccount.google.com/apppasswords), not your normal password",
+            e
+        )
+    })
+}
+
+fn cow_str(o: &Option<&[u8]>) -> String {
+    o.map(|c| String::from_utf8_lossy(c).to_string())
+        .unwrap_or_default()
+}
+
+fn addr_to_string(a: &imap_proto::types::Address) -> String {
+    let mbox = cow_str(&a.mailbox);
+    let host = cow_str(&a.host);
+    let name = cow_str(&a.name);
+    let email = if host.is_empty() {
+        mbox
+    } else {
+        format!("{}@{}", mbox, host)
+    };
+    if name.is_empty() {
+        email
+    } else {
+        format!("{} <{}>", name, email)
+    }
+}
+
+fn envelope_row(f: &imap::types::Fetch) -> String {
+    let uid = f.uid.unwrap_or(0);
+    let env = f.envelope();
+    let subject = env
+        .and_then(|e| e.subject.as_ref())
+        .map(|s| String::from_utf8_lossy(s).to_string())
+        .unwrap_or_else(|| "(no subject)".into());
+    let from = env
+        .and_then(|e| e.from.as_ref())
+        .and_then(|v| v.first())
+        .map(addr_to_string)
+        .unwrap_or_default();
+    format!("[{}] {}  —  {}", uid, subject.trim(), from)
+}
+
+/// List the most recent `count` messages in the inbox (uid, subject, sender).
+#[tauri::command]
+fn gmail_list(req: GmailReq) -> Result<String, String> {
+    let mut session = gmail_session(&req.address, &req.password)?;
+    let mailbox = session.select("INBOX").map_err(|e| e.to_string())?;
+    let total = mailbox.exists;
+    if total == 0 {
+        let _ = session.logout();
+        return Ok("(inbox is empty)".into());
+    }
+    let count = if req.count == 0 { 10 } else { req.count };
+    let start = if total > count { total - count + 1 } else { 1 };
+    let range = format!("{}:{}", start, total);
+    let messages = session
+        .fetch(range, "(UID ENVELOPE)")
+        .map_err(|e| e.to_string())?;
+    let mut rows: Vec<(u32, String)> = messages
+        .iter()
+        .map(|m| (m.uid.unwrap_or(0), envelope_row(m)))
+        .collect();
+    let _ = session.logout();
+    rows.sort_by(|a, b| b.0.cmp(&a.0)); // newest first
+    Ok(rows
+        .into_iter()
+        .map(|(_, s)| s)
+        .collect::<Vec<_>>()
+        .join("\n"))
+}
+
+/// IMAP TEXT search; returns matching messages (newest first, capped at 25).
+#[tauri::command]
+fn gmail_search(req: GmailReq) -> Result<String, String> {
+    let mut session = gmail_session(&req.address, &req.password)?;
+    session.select("INBOX").map_err(|e| e.to_string())?;
+    let q = req.query.replace('"', "");
+    let uids = session
+        .uid_search(format!("TEXT \"{}\"", q))
+        .map_err(|e| e.to_string())?;
+    if uids.is_empty() {
+        let _ = session.logout();
+        return Ok("(no matches)".into());
+    }
+    let mut ids: Vec<u32> = uids.into_iter().collect();
+    ids.sort_by(|a, b| b.cmp(a));
+    ids.truncate(25);
+    let set = ids
+        .iter()
+        .map(|u| u.to_string())
+        .collect::<Vec<_>>()
+        .join(",");
+    let messages = session
+        .uid_fetch(set, "(UID ENVELOPE)")
+        .map_err(|e| e.to_string())?;
+    let mut rows: Vec<(u32, String)> = messages
+        .iter()
+        .map(|m| (m.uid.unwrap_or(0), envelope_row(m)))
+        .collect();
+    let _ = session.logout();
+    rows.sort_by(|a, b| b.0.cmp(&a.0));
+    Ok(rows
+        .into_iter()
+        .map(|(_, s)| s)
+        .collect::<Vec<_>>()
+        .join("\n"))
+}
+
+fn extract_text(mail: &mailparse::ParsedMail) -> String {
+    if mail.subparts.is_empty() {
+        if mail.ctype.mimetype.starts_with("text/") {
+            return mail.get_body().unwrap_or_default();
+        }
+        return String::new();
+    }
+    for p in &mail.subparts {
+        if p.ctype.mimetype == "text/plain" {
+            if let Ok(b) = p.get_body() {
+                if !b.trim().is_empty() {
+                    return b;
+                }
+            }
+        }
+    }
+    let mut out = String::new();
+    for p in &mail.subparts {
+        out.push_str(&extract_text(p));
+    }
+    out
+}
+
+/// Read one message by uid and return sender, subject and a text body.
+#[tauri::command]
+fn gmail_read(req: GmailReq) -> Result<String, String> {
+    let mut session = gmail_session(&req.address, &req.password)?;
+    session.select("INBOX").map_err(|e| e.to_string())?;
+    let messages = session
+        .uid_fetch(&req.id, "(BODY[])")
+        .map_err(|e| e.to_string())?;
+    let msg = messages.iter().next().ok_or("email not found")?;
+    let body = msg.body().ok_or("no body returned")?;
+    let parsed = mailparse::parse_mail(body).map_err(|e| e.to_string())?;
+    let text = extract_text(&parsed);
+    let _ = session.logout();
+    let hdr = |key: &str| {
+        parsed
+            .headers
+            .iter()
+            .find(|h| h.get_key().eq_ignore_ascii_case(key))
+            .map(|h| h.get_value())
+            .unwrap_or_default()
+    };
+    Ok(format!(
+        "From: {}\nSubject: {}\nDate: {}\n\n{}",
+        hdr("from"),
+        hdr("subject"),
+        hdr("date"),
+        text.chars().take(8000).collect::<String>()
+    ))
+}
+
+/// Send a plain-text email via Gmail SMTP.
+#[tauri::command]
+fn gmail_send(req: GmailReq) -> Result<String, String> {
+    use lettre::transport::smtp::authentication::Credentials;
+    use lettre::{Message, SmtpTransport, Transport};
+    let email = Message::builder()
+        .from(
+            req.address
+                .parse()
+                .map_err(|e| format!("bad from address: {}", e))?,
+        )
+        .to(req
+            .to
+            .parse()
+            .map_err(|e| format!("bad to address: {}", e))?)
+        .subject(req.subject.clone())
+        .date_now()
+        .body(req.body.clone())
+        .map_err(|e| e.to_string())?;
+    let creds = Credentials::new(req.address.clone(), req.password.clone());
+    let mailer = SmtpTransport::relay("smtp.gmail.com")
+        .map_err(|e| e.to_string())?
+        .credentials(creds)
+        .build();
+    mailer
+        .send(&email)
+        .map_err(|e| format!("smtp send failed: {}", e))?;
+    Ok(format!("sent to {}", req.to))
+}
+
+// ─────────────────────────── MCP (stdio JSON-RPC servers) ───────────────────────────
+// MCP servers are long-lived child processes (usually `npx …`) that speak
+// line-delimited JSON-RPC over stdin/stdout. Unlike the terminal these need
+// clean pipes (not a PTY, which would echo and line-edit), so they get their
+// own registry. stdout lines are forwarded to the frontend as `mcp-stdout`
+// events; the JS client correlates them to requests by JSON-RPC id.
+
+struct McpProc {
+    child: std::process::Child,
+    stdin: std::process::ChildStdin,
+}
+
+#[derive(Default)]
+struct McpState {
+    procs: Mutex<HashMap<String, McpProc>>,
+}
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct McpLine {
+    id: String,
+    line: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct McpStartReq {
+    id: String,
+    command: String,
+    #[serde(default)]
+    args: Vec<String>,
+    #[serde(default)]
+    env: HashMap<String, String>,
+}
+
+/// Spawn an MCP server as a piped child process and stream its stdout/stderr
+/// back as `mcp-stdout` / `mcp-stderr` events. On Windows the command runs via
+/// `cmd /C` so `.cmd` shims (npx, uvx) resolve on PATH. No-op if already running.
+#[tauri::command]
+fn mcp_start(app: tauri::AppHandle, state: State<McpState>, req: McpStartReq) -> Result<(), String> {
+    use std::io::{BufRead, BufReader};
+    use std::process::Stdio;
+    if state
+        .procs
+        .lock()
+        .map_err(|e| e.to_string())?
+        .contains_key(&req.id)
+    {
+        return Ok(());
+    }
+
+    let mut cmd = if cfg!(windows) {
+        let mut c = Command::new("cmd");
+        c.arg("/C").arg(&req.command).args(&req.args);
+        c
+    } else {
+        let mut c = Command::new(&req.command);
+        c.args(&req.args);
+        c
+    };
+    for (k, v) in &req.env {
+        cmd.env(k, v);
+    }
+    cmd.stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x0800_0000); // CREATE_NO_WINDOW — no flashing console
+    }
+
+    let mut child = cmd.spawn().map_err(|e| format!("spawn failed: {}", e))?;
+    let stdout = child.stdout.take().ok_or("no stdout pipe")?;
+    let stderr = child.stderr.take().ok_or("no stderr pipe")?;
+    let stdin = child.stdin.take().ok_or("no stdin pipe")?;
+
+    // Register before spawning readers so an instant-exit can't race the insert.
+    state
+        .procs
+        .lock()
+        .map_err(|e| e.to_string())?
+        .insert(req.id.clone(), McpProc { child, stdin });
+
+    let (ido, appo) = (req.id.clone(), app.clone());
+    std::thread::spawn(move || {
+        let mut reader = BufReader::new(stdout);
+        let mut line = String::new();
+        loop {
+            line.clear();
+            match reader.read_line(&mut line) {
+                Ok(0) => break,
+                Ok(_) => {
+                    let _ = appo.emit(
+                        "mcp-stdout",
+                        McpLine {
+                            id: ido.clone(),
+                            line: line.trim_end().to_string(),
+                        },
+                    );
+                }
+                Err(_) => break,
+            }
+        }
+        // stdout closed → the server has exited; drop bookkeeping and notify.
+        if let Some(st) = appo.try_state::<McpState>() {
+            if let Ok(mut map) = st.procs.lock() {
+                map.remove(&ido);
+            }
+        }
+        let _ = appo.emit("mcp-exit", ido.clone());
+    });
+
+    let (ide, appe) = (req.id.clone(), app.clone());
+    std::thread::spawn(move || {
+        let mut reader = BufReader::new(stderr);
+        let mut line = String::new();
+        loop {
+            line.clear();
+            match reader.read_line(&mut line) {
+                Ok(0) => break,
+                Ok(_) => {
+                    let _ = appe.emit(
+                        "mcp-stderr",
+                        McpLine {
+                            id: ide.clone(),
+                            line: line.trim_end().to_string(),
+                        },
+                    );
+                }
+                Err(_) => break,
+            }
+        }
+    });
+
+    Ok(())
+}
+
+/// Write one JSON-RPC message (a single line) to a running server's stdin.
+#[tauri::command]
+fn mcp_send(state: State<McpState>, id: String, message: String) -> Result<(), String> {
+    use std::io::Write;
+    let mut map = state.procs.lock().map_err(|e| e.to_string())?;
+    let p = map.get_mut(&id).ok_or("mcp server is not running")?;
+    p.stdin
+        .write_all(message.as_bytes())
+        .map_err(|e| e.to_string())?;
+    p.stdin.write_all(b"\n").map_err(|e| e.to_string())?;
+    p.stdin.flush().map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+/// Kill a running server and drop it from the registry.
+#[tauri::command]
+fn mcp_stop(state: State<McpState>, id: String) -> Result<(), String> {
+    if let Some(mut p) = state.procs.lock().map_err(|e| e.to_string())?.remove(&id) {
+        let _ = p.child.kill();
+        let _ = p.child.wait();
+    }
+    Ok(())
+}
+
+/// Ids of servers currently running.
+#[tauri::command]
+fn mcp_running(state: State<McpState>) -> Vec<String> {
+    state
+        .procs
+        .lock()
+        .map(|m| m.keys().cloned().collect())
+        .unwrap_or_default()
+}
+
+/// Read the Claude Desktop config JSON (for the MCP "Import" button).
+#[tauri::command]
+fn mcp_claude_config() -> Result<String, String> {
+    let base = std::env::var("APPDATA").map_err(|_| "APPDATA not set".to_string())?;
+    let path = std::path::Path::new(&base)
+        .join("Claude")
+        .join("claude_desktop_config.json");
+    if !path.exists() {
+        return Err(format!("no config at {}", path.display()));
+    }
+    std::fs::read_to_string(&path).map_err(|e| e.to_string())
+}
+
 fn main() {
     tauri::Builder::default()
         .manage(TermState::default())
+        .manage(McpState::default())
         .invoke_handler(tauri::generate_handler![
             http_proxy,
             groq_transcribe,
@@ -692,7 +1105,16 @@ fn main() {
             agent_file_read,
             agent_file_write,
             agent_shell_exec,
-            pick_folder
+            pick_folder,
+            gmail_list,
+            gmail_search,
+            gmail_read,
+            gmail_send,
+            mcp_start,
+            mcp_send,
+            mcp_stop,
+            mcp_running,
+            mcp_claude_config
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
