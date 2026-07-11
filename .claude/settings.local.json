@@ -61,7 +61,8 @@
       "PowerShell($c = Get-NetTCPConnection -LocalPort 1420 -State Listen -ErrorAction SilentlyContinue; if\\($c\\){ $c | Select-Object -First 1 LocalPort,OwningProcess; Get-Process -Id \\($c.OwningProcess | Select-Object -First 1\\) | Select-Object Id,ProcessName,StartTime } else { \"nothing on 1420\" })",
       "PowerShell(try { Get-Process -Id 17220 -ErrorAction Stop | Select-Object Id,ProcessName,Path } catch { \"pid 17220 not found: $\\($_.Exception.Message\\)\" }; $tauri = Get-Process | Where-Object { $_.ProcessName -match 'kite-app|kite' } ; if\\($tauri\\){ \"TAURI RUNNING:\"; $tauri | Select-Object Id,ProcessName } else { \"no kite-app process\" })",
       "Bash(tee \"C:/Users/praga/AppData/Local/Temp/claude/C--Users-praga-KITE-APP/5ebea42f-8c10-42a2-80ba-07a4efed3ba2/scratchpad/tauri-dev2.log\")",
-      "Bash(echo \"exit: $?\")"
+      "Bash(echo \"exit: $?\")",
+      "Bash(ps -W)"
     ]
   }
 }
