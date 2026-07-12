@@ -71,7 +71,19 @@
       "Read(//tmp/**)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:1420/)",
       "Bash(node -e ' *)",
-      "Bash(grep -n \"r=await kiteAsk\\(\\\\[{role:'system',content:sys}\\\\|const r=await kiteAsk\\(\\\\[\" src/index.html)"
+      "Bash(grep -n \"r=await kiteAsk\\(\\\\[{role:'system',content:sys}\\\\|const r=await kiteAsk\\(\\\\[\" src/index.html)",
+      "Bash(taskkill //PID 11712 //F)",
+      "Bash(grep -oP '👁[^`]*')",
+      "Bash(awk 'NR>=7144 && NR<=8320 && \\(/<script/ || /<\\\\/script>/ || /^<!-- ═/ || /window\\\\.kiteProjects = \\\\\\(function/ || /window\\\\.kiteTerm = kiteTerm/ || /GLOBAL DRAG/\\)' src/index.html)",
+      "Bash(awk -F: '$1>=7144 && $1<=8330')",
+      "Bash(python \"C:/Users/praga/AppData/Local/Temp/claude/C--Users-praga-KITE-APP/0310be84-95bd-4182-a822-0f5147091ad8/scratchpad/strip.py\")",
+      "Bash(awk -F: '$1>6700 || $1<50')",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}, %{size_download} bytes\\\\n\" http://localhost:1420/index.html)",
+      "Bash(python \"C:/Users/praga/AppData/Local/Temp/claude/C--Users-praga-KITE-APP/0310be84-95bd-4182-a822-0f5147091ad8/scratchpad/strip_rust.py\")",
+      "Bash(awk 'NR>=1200 && NR<=1300 && /id=\"tab-[0-9]/' src/index.html)",
+      "Bash(awk 'NR<=1289 && /class=\"tab-panel\"/ {last=NR\": \"$0} END{print last}' src/index.html)",
+      "Bash(curl -s -o /dev/null -w \"port 1420: HTTP %{http_code}\\\\n\" http://localhost:1420)",
+      "Bash(curl -s -o /dev/null -w \"vite 1420: HTTP %{http_code}\\\\n\" http://localhost:1420)"
     ]
   }
 }

@@ -96,50 +96,6 @@ body.light .theme-toggle{border-color:#ccc;color:#888}
 .tab-panel.active{display:block}
 /* Kite (opencode) tab fills the viewport tightly, no giant bottom gap */
 #tab-7.tab-panel.active{margin:-8px 0}
-#tab-8.tab-panel.active{margin:-8px 0}
-/* ── Real terminal (xterm.js + ConPTY): tabs, splits, toolbar ── */
-.term-win{min-height:560px}
-/* tab bar */
-.term-tabbar{display:flex;align-items:flex-end;gap:2px;padding:5px 8px 0;background:#161616;border-bottom:1px solid #202020;flex:none;overflow-x:auto}
-.term-tab{display:flex;align-items:center;gap:8px;padding:6px 8px 7px 12px;font-family:'Space Mono',monospace;font-size:10.5px;color:#9a9a9a;background:transparent;border:none;border-radius:6px 6px 0 0;cursor:pointer;white-space:nowrap;transition:background .12s,color .12s}
-.term-tab:hover{background:#1d1d1d;color:#c8c8c8}
-.term-tab.active{background:#0f0f0f;color:var(--teal)}
-.term-tab-x{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:4px;font-size:12px;line-height:1;color:#6a6a6a}
-.term-tab-x:hover{background:rgba(255,107,107,.18);color:var(--coral)}
-.term-tab-plus{flex:none;margin:0 2px 4px;width:24px;height:24px;border:none;border-radius:5px;background:transparent;color:#8a8a8a;font-size:15px;line-height:1;cursor:pointer}
-.term-tab-plus:hover{background:rgba(45,212,191,.12);color:var(--teal)}
-/* toolbar */
-.term-toolbar{display:flex;align-items:center;gap:6px;padding:6px 10px;background:#0f0f0f;border-bottom:1px solid #1b1b1b;flex:none}
-.term-btn{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.3px;color:#b8b8b8;background:#1a1a1a;border:1px solid #262626;border-radius:5px;padding:5px 11px;cursor:pointer;white-space:nowrap;transition:color .12s,border-color .12s,background .12s}
-.term-btn:hover{color:var(--teal);border-color:rgba(45,212,191,.45);background:#1e1e1e}
-.term-btn-group{display:flex}
-.term-btn-group .term-btn:first-child{border-radius:5px 0 0 5px;border-right:none}
-.term-btn-dd{border-radius:0 5px 5px 0;padding:5px 7px}
-.term-toolbar-right{margin-left:auto;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.4px;color:#7a7a7a;background:#141414;border:1px solid #222;border-radius:5px;padding:5px 11px}
-/* workspace: tab pages + split panes */
-.term-workspace{position:relative;flex:1;min-height:460px;display:flex;background:#050505;overflow:hidden}
-.term-tabpage{flex:1;display:flex;min-width:0;min-height:0;padding:4px;gap:4px}
-.term-split{flex:1;display:flex;gap:4px;min-width:0;min-height:0}
-.term-split-row{flex-direction:row}
-.term-split-col{flex-direction:column}
-.term-pane{flex:1;position:relative;min-width:0;min-height:0;background:#0a0a0a;border:1px solid #1d1d1d;border-radius:5px;overflow:hidden;transition:border-color .12s,box-shadow .12s}
-.term-pane.focused{border-color:rgba(45,212,191,.55);box-shadow:0 0 0 1px rgba(45,212,191,.22)}
-.term-pane-host{position:absolute;inset:8px 4px 4px 10px}
-.term-pane .xterm{height:100%}
-.term-pane .xterm-viewport{background:transparent!important}
-/* thin dark scrollbar */
-.term-pane .xterm-viewport::-webkit-scrollbar{width:8px}
-.term-pane .xterm-viewport::-webkit-scrollbar-track{background:transparent}
-.term-pane .xterm-viewport::-webkit-scrollbar-thumb{background:#242424;border-radius:4px}
-.term-pane .xterm-viewport::-webkit-scrollbar-thumb:hover{background:#323232}
-/* menus (context + quick launch) */
-.term-menu{position:fixed;z-index:99999;display:none;min-width:170px;padding:5px;background:#151515;border:1px solid #2a2a2a;border-radius:9px;box-shadow:0 14px 40px rgba(0,0,0,.65);font-family:var(--sans)}
-.term-menu.open{display:block}
-.term-menu-item{padding:7px 12px;font-size:12.5px;color:#cfcfcf;border-radius:5px;cursor:pointer;white-space:nowrap}
-.term-menu-item:hover{background:rgba(45,212,191,.13);color:var(--teal)}
-.term-menu-sep{height:1px;margin:4px 4px;background:#262626}
-#term-status{color:var(--teal)}
-#term-status.dead{color:var(--coral)}
 /* ══════════ AGENTS TAB ══════════ */
 #tab-9.tab-panel.active{margin:-8px 0}
 .ag-wrap{display:flex;gap:14px;height:calc(100vh - 150px);min-height:520px}
@@ -995,13 +951,12 @@ body.light .kv-bubble{background:linear-gradient(135deg,rgba(250,250,252,.92),rg
   <div class="tab-nav">
     <button class="tab-btn active" data-idx="7" onclick="switchTab(7)">Chat</button>
     <button class="tab-btn" data-idx="9" id="tab-btn-agents" onclick="switchTab(9)">Agents</button>
-    <button class="tab-btn" data-idx="8" onclick="switchTab(8)">Terminal</button>
     <button class="tab-btn" data-idx="4" onclick="switchTab(4)">API Keys</button>
     <button class="tab-btn" data-idx="10" onclick="switchTab(10)">Connections</button>
     <button class="tab-btn" data-idx="11" onclick="switchTab(11)">MCP</button>
   </div>
   <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn">
-    <span id="theme-icon">☀</span>
+    <span id="theme-icon">◐</span>
     <span id="theme-label">Light</span>
   </button>
   <button class="kv-topbar-mic" id="kv-open-btn" onclick="kiteVoice.toggleCard()" title="Kite Voice">
@@ -1282,7 +1237,8 @@ body.light .kv-bubble{background:linear-gradient(135deg,rgba(250,250,252,.92),rg
   </p>
   <div class="mcp-bar">
     <span class="cx-count-pill" id="mcp-count">0 running</span>
-    <button class="mcp-btn" onclick="kiteMCP.importConfig()" style="margin-left:auto">⬇ Import from Claude Desktop</button>
+    <button class="mcp-btn" onclick="kiteMemory.openBrowser()" style="margin-left:auto">Browse Memory</button>
+    <button class="mcp-btn" onclick="kiteMCP.importConfig()">Import from Claude Desktop</button>
     <button class="mcp-btn teal" onclick="kiteMCP.openCustom()">+ Add custom server</button>
   </div>
 
@@ -1330,7 +1286,7 @@ body.light .kv-bubble{background:linear-gradient(135deg,rgba(250,250,252,.92),rg
           <span class="oc-dot oc-green"></span>
         </div>
         <div class="fox-logo" style="width:16px;height:16px;margin-right:6px;filter:drop-shadow(0 0 4px rgba(45,212,191,.4))" role="img" aria-label="Kite"></div>
-        <div class="oc-title">Terminal</div>
+        <div class="oc-title">Kite</div>
         <div class="oc-tbright">⌥⌘1</div>
       </div>
 
@@ -1366,7 +1322,7 @@ body.light .kv-bubble{background:linear-gradient(135deg,rgba(250,250,252,.92),rg
           <div class="oc-hints">
             <span class="oc-hint"><b>⏎</b> send</span>
             <span class="oc-hint"><b>shift+⏎</b> new line</span>
-            <span class="oc-hint">📎 attach a file for context</span>
+            <span class="oc-hint">attach a file for context</span>
           </div>
 
           <div class="oc-tip">
@@ -1418,6 +1374,59 @@ body.light .kv-bubble{background:linear-gradient(135deg,rgba(250,250,252,.92),rg
   </div>
 </div>
 
+<!-- Agents tab — session list + activity stream visual enhancements (self-contained, agx- / additive .ag- rules) -->
+<style>
+  /* engine-coloured left border */
+  .ag-card{border-left-width:3px}
+  .ag-card.eng-api{border-left-color:var(--teal,#2dd4bf)}
+  .ag-card.eng-local{border-left-color:var(--violet,#a78bfa)}
+  .ag-card.eng-opencode{border-left-color:#f59e0b}
+  .ag-card.eng-coordinator{border-left-color:#e0c07b}
+  .ag-card.sel{border-left-color:var(--teal,#2dd4bf)}
+  /* running agents pulse */
+  .ag-card.running{animation:agxpulse 1.9s ease-in-out infinite}
+  @keyframes agxpulse{0%,100%{box-shadow:0 0 0 1px rgba(45,212,191,.14)}50%{box-shadow:0 0 11px 1px rgba(45,212,191,.42)}}
+  /* type icon badge */
+  .ag-typeicon{flex:none;width:19px;height:19px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-family:'Space Mono',monospace;font-size:8.5px;font-weight:700;color:#08120f}
+  /* cost-to-budget progress bar */
+  .ag-costbar{height:3px;border-radius:3px;background:rgba(255,255,255,.06);margin-top:7px;overflow:hidden}
+  .ag-costbar>i{display:block;height:100%;width:0;background:var(--teal,#2dd4bf);border-radius:3px;transition:width .3s}
+  .ag-costbar>i.over{background:var(--coral,#ff6b6b)}
+  /* status group headers */
+  .ag-grouph{font-family:'Space Mono',monospace;font-size:9px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--t3,#6b6b78);padding:8px 4px 3px;display:flex;align-items:center;gap:6px}
+  .ag-grouph .c{margin-left:auto;font-weight:400}
+  .ag-grouph.run{color:var(--teal,#2dd4bf)}
+  .ag-grouph.wait{color:var(--coral,#ff6b6b)}
+  /* activity stream: timestamp gutter + collapsible tool calls */
+  .ag-row{display:flex;gap:9px;align-items:baseline}
+  .ag-ts{flex:none;font-family:'Space Mono',monospace;font-size:9px;color:var(--t3,#6b6b78);width:50px;opacity:.65;user-select:none;padding-top:2px}
+  .ag-row>.ag-line,.ag-row>.ag-approval,.ag-row>details{flex:1;min-width:0}
+  details.ag-tc{border:1px solid var(--border,#26262c);border-radius:7px;background:var(--surface,#0f0f14);margin:4px 0;overflow:hidden}
+  details.ag-tc>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;padding:6px 10px;font-size:11.5px;color:var(--t1,#e6e6e6)}
+  details.ag-tc>summary::-webkit-details-marker{display:none}
+  details.ag-tc .ag-tc-ico{flex:none;width:18px;height:18px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-family:'Space Mono',monospace;font-size:10px;background:rgba(45,212,191,.12);color:var(--teal,#2dd4bf)}
+  details.ag-tc .ag-tc-ico.mcp{background:rgba(201,165,240,.14);color:#c9a5f0}
+  details.ag-tc .ag-tc-ico.conn{background:rgba(96,175,239,.14);color:#61afef}
+  details.ag-tc .ag-tc-ico.ask{background:rgba(255,107,107,.14);color:var(--coral,#ff6b6b)}
+  details.ag-tc .ag-tc-name{font-weight:600}
+  details.ag-tc .ag-tc-chev{margin-left:auto;color:var(--t3);transition:transform .15s;font-size:10px}
+  details.ag-tc[open] .ag-tc-chev{transform:rotate(90deg)}
+  details.ag-tc>pre{margin:0;padding:8px 11px;border-top:1px solid var(--border,#26262c);background:var(--bg,#0b0b10);font-family:'Space Mono',monospace;font-size:11px;color:var(--t2,#9a9aa5);white-space:pre-wrap;word-break:break-word;max-height:220px;overflow:auto}
+  .ag-copy{flex:none;font-family:'Space Mono',monospace;font-size:9px;color:var(--t3,#6b6b78);background:none;border:1px solid var(--border,#26262c);border-radius:5px;padding:2px 7px;cursor:pointer;margin-left:8px}
+  .ag-copy:hover{color:var(--teal,#2dd4bf);border-color:rgba(45,212,191,.4)}
+  /* detail panel tab bar */
+  .ag-dtabs{display:flex;gap:2px;padding:0 2px;border-bottom:1px solid var(--border,#26262c);margin-bottom:6px;flex:none}
+  .ag-dtab{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.5px;text-transform:uppercase;color:var(--t3,#6b6b78);background:none;border:none;border-bottom:2px solid transparent;padding:8px 12px;cursor:pointer;transition:color .14s}
+  .ag-dtab:hover{color:var(--t2,#9a9aa5)}
+  .ag-dtab.on{color:var(--teal,#2dd4bf);border-bottom-color:var(--teal,#2dd4bf)}
+  .ag-dtab .n{opacity:.6;margin-left:4px}
+  .ag-dpane{flex:1;min-height:0;overflow:auto}
+  .ag-dpane-empty{color:var(--t3,#6b6b78);font-size:12px;padding:24px 8px;text-align:center}
+  .ag-cfg-row{display:flex;gap:10px;padding:7px 2px;border-bottom:1px solid var(--border,#1e1e24);font-size:12px}
+  .ag-cfg-row .k{flex:none;width:120px;color:var(--t3,#6b6b78);font-family:'Space Mono',monospace;font-size:10.5px}
+  .ag-cfg-row .v{flex:1;min-width:0;color:var(--t1,#e6e6e6);word-break:break-word}
+</style>
+
 <!-- ═══════════ TAB 9 · AGENTS (autonomous AI) ═══════════ -->
 <div class="tab-panel" id="tab-9">
   <div class="ag-wrap">
@@ -1447,7 +1456,17 @@ body.light .kv-bubble{background:linear-gradient(135deg,rgba(250,250,252,.92),rg
           <div class="ag-d-ticker" id="ag-d-ticker">~0 tok · $0.00</div>
           <button class="ag-cancel-btn" id="ag-d-cancel" style="display:none">Cancel Agent</button>
         </div>
+        <div class="ag-dtabs" id="ag-dtabs">
+          <button class="ag-dtab on" data-dtab="activity">Activity</button>
+          <button class="ag-dtab" data-dtab="files">Files<span class="n" id="ag-dtab-files-n"></span></button>
+          <button class="ag-dtab" data-dtab="memory">Memory<span class="n" id="ag-dtab-memory-n"></span></button>
+          <button class="ag-dtab" data-dtab="config">Config</button>
+        </div>
         <div class="ag-stream" id="ag-stream"></div>
+        <div class="ag-artifacts" id="ag-artifacts" style="display:none"></div>
+        <div class="ag-dpane" id="ag-pane-files" style="display:none"></div>
+        <div class="ag-dpane" id="ag-pane-memory" style="display:none"></div>
+        <div class="ag-dpane" id="ag-pane-config" style="display:none"></div>
         <div class="ag-msgbox">
           <input type="text" class="ag-msg-input" id="ag-msg-input" placeholder="Send message to agent…" autocomplete="off">
           <button class="ag-msg-send" id="ag-msg-send" title="Inject message">
@@ -1458,6 +1477,62 @@ body.light .kv-bubble{background:linear-gradient(135deg,rgba(250,250,252,.92),rg
     </section>
   </div>
 </div>
+
+<!-- ░░ NEW AGENT · tool-picker cards (self-contained, agc- prefix) ░░ -->
+<style>
+  .agc-sec-h{display:flex;align-items:center;gap:8px;margin:14px 0 8px}
+  .agc-sec-t{font-family:'Space Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--t2,#9a9aa5)}
+  .agc-sec-c{font-size:10px;color:var(--t3,#6b6b78);margin-left:auto}
+  .agc-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  @media (max-width:620px){.agc-grid{grid-template-columns:1fr}}
+  /* base tool card */
+  .agc-card{position:relative;display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border,#26262c);border-left:3px solid var(--border,#26262c);
+    border-radius:9px;background:var(--surface,#0f0f14);cursor:pointer;transition:border-color .16s,background .16s,box-shadow .16s;user-select:none}
+  .agc-card:hover{box-shadow:0 0 0 1px rgba(45,212,191,.25),0 4px 14px rgba(0,0,0,.28)}
+  .agc-card:has(.agc-cb:checked){border-color:var(--teal,#2dd4bf);border-left-color:var(--teal,#2dd4bf);background:rgba(45,212,191,.07)}
+  .agc-cb{position:absolute;opacity:0;width:0;height:0;pointer-events:none}
+  .agc-body{flex:1;min-width:0}
+  .agc-name{font-size:12.5px;font-weight:600;color:var(--t1,#e6e6e6);line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .agc-desc{font-size:10.5px;color:var(--t3,#6b6b78);line-height:1.3;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .agc-badge{font-family:'Space Mono',monospace;font-size:8.5px;font-weight:700;letter-spacing:.6px;padding:2px 6px;border-radius:5px;flex:none}
+  .agc-badge.auto{color:var(--teal,#2dd4bf);background:rgba(45,212,191,.12);border:1px solid rgba(45,212,191,.3)}
+  .agc-badge.ask{color:var(--coral,#ff6b6b);background:rgba(255,107,107,.12);border:1px solid rgba(255,107,107,.3)}
+  /* toggle switch */
+  .agc-tog{flex:none;position:relative;width:34px;height:19px;border-radius:19px;background:var(--border,#3a3a42);transition:background .18s}
+  .agc-tog::after{content:'';position:absolute;top:2px;left:2px;width:15px;height:15px;border-radius:50%;background:#fff;transition:transform .18s cubic-bezier(.3,.9,.4,1.3);box-shadow:0 1px 3px rgba(0,0,0,.4)}
+  .agc-card:has(.agc-cb:checked) .agc-tog{background:var(--teal,#2dd4bf)}
+  .agc-card:has(.agc-cb:checked) .agc-tog::after{transform:translateX(15px)}
+  /* source card (a connection service or MCP server) with expandable sub-tools */
+  .agc-src{border:1px solid var(--border,#26262c);border-left:3px solid var(--border,#26262c);border-radius:9px;background:var(--surface,#0f0f14);margin-bottom:8px;overflow:hidden;transition:border-color .16s}
+  .agc-src.on{border-left-color:var(--teal,#2dd4bf)}
+  .agc-src.disabled{opacity:.55}
+  .agc-src-head{display:flex;align-items:center;gap:10px;padding:10px 12px}
+  .agc-src-logo{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex:none;background:rgba(255,255,255,.04);overflow:hidden}
+  .agc-src-logo svg{width:17px;height:17px}
+  .agc-letter{font-family:'Space Mono',monospace;font-size:11px;font-weight:700;color:#fff;width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex:none}
+  .agc-src-titles{flex:1;min-width:0}
+  .agc-src-name{font-size:12.5px;font-weight:600;color:var(--t1,#e6e6e6);display:flex;align-items:center;gap:7px}
+  .agc-statedot{width:7px;height:7px;border-radius:50%;flex:none;background:var(--t3,#555)}
+  .agc-statedot.running{background:var(--teal,#2dd4bf);box-shadow:0 0 6px rgba(45,212,191,.7)}
+  .agc-toolbadge{font-size:9.5px;color:var(--t3,#6b6b78);margin-top:1px}
+  .agc-connect{font-size:11px;color:var(--teal,#2dd4bf);cursor:pointer;text-decoration:none;flex:none}
+  .agc-connect:hover{text-decoration:underline}
+  .agc-exp{flex:none;background:none;border:none;color:var(--t2,#9a9aa5);cursor:pointer;font-size:12px;padding:4px;transition:transform .18s;line-height:1}
+  .agc-src.expanded .agc-exp{transform:rotate(90deg)}
+  .agc-sub{display:none;padding:0 12px 10px 12px;flex-direction:column;gap:6px}
+  .agc-src.expanded .agc-sub{display:flex}
+  .agc-subcard{display:flex;align-items:center;gap:9px;padding:7px 10px;border:1px solid var(--border,#26262c);border-radius:7px;background:var(--bg,#0b0b10);cursor:pointer;user-select:none;transition:border-color .14s}
+  .agc-subcard:has(.agc-cb:checked){border-color:rgba(45,212,191,.55)}
+  .agc-subname{flex:1;min-width:0;font-family:'Space Mono',monospace;font-size:11px;color:var(--t1,#e6e6e6);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .agc-src .agc-tog{width:30px;height:17px}
+  .agc-src .agc-tog::after{width:13px;height:13px}
+  .agc-src .agc-subcard:has(.agc-cb:checked) .agc-tog{background:var(--teal,#2dd4bf)}
+  .agc-src .agc-subcard:has(.agc-cb:checked) .agc-tog::after{transform:translateX(13px)}
+  .agc-master{cursor:pointer}
+  .agc-master::after{transform:var(--knob,translateX(0))}
+  .agc-ext-empty{font-size:11.5px;color:var(--t3,#6b6b78);line-height:1.6;padding:10px 2px}
+  .agc-ext-empty a{color:var(--teal,#2dd4bf);cursor:pointer}
+</style>
 
 <!-- ░░ NEW AGENT MODAL ░░ -->
 <div class="ag-modal-overlay" id="ag-modal" style="display:none">
@@ -1496,17 +1571,30 @@ body.light .kv-bubble{background:linear-gradient(135deg,rgba(250,250,252,.92),rg
       <label class="ag-field"><span class="ag-flabel">Working directory</span>
         <div class="ag-dirpick">
           <input type="text" id="ag-f-cwd" class="ag-input" placeholder="C:\Users\…">
-          <button class="ag-dir-btn" id="ag-f-cwd-btn" type="button" title="Pick folder">📁</button>
+          <button class="ag-dir-btn" id="ag-f-cwd-btn" type="button" title="Pick folder">…</button>
         </div></label>
       <div class="ag-field">
         <span class="ag-flabel">Tools</span>
-        <div class="ag-toolgroup-h">Built-in</div>
-        <div class="ag-tools">
-          <label class="ag-check"><input type="checkbox" id="ag-t-web" checked> Web fetch <em>read URLs</em></label>
-          <label class="ag-check"><input type="checkbox" id="ag-t-read" checked> File read <em>in working dir</em></label>
-          <label class="ag-check"><input type="checkbox" id="ag-t-write"> File write <em>asks permission</em></label>
-          <label class="ag-check"><input type="checkbox" id="ag-t-shell"> Shell exec <em>asks permission</em></label>
-          <label class="ag-check"><input type="checkbox" id="ag-t-spawn"> Spawn subagents</label>
+        <div class="agc-sec-h"><span class="agc-sec-t">Built-in</span><span class="agc-sec-c" id="agc-builtin-c"></span></div>
+        <div class="agc-grid" id="agc-builtin-grid">
+          <label class="agc-card" for="ag-t-web"><input type="checkbox" id="ag-t-web" class="agc-cb" checked onchange="kiteAgentTools&&kiteAgentTools.sync()">
+            <span class="agc-tog"></span><div class="agc-body"><div class="agc-name">Web fetch</div><div class="agc-desc">Read any URL</div></div><span class="agc-badge auto">AUTO</span></label>
+          <label class="agc-card" for="ag-t-read"><input type="checkbox" id="ag-t-read" class="agc-cb" checked onchange="kiteAgentTools&&kiteAgentTools.sync()">
+            <span class="agc-tog"></span><div class="agc-body"><div class="agc-name">File read</div><div class="agc-desc">Within working dir</div></div><span class="agc-badge auto">AUTO</span></label>
+          <label class="agc-card" for="ag-t-write"><input type="checkbox" id="ag-t-write" class="agc-cb" onchange="kiteAgentTools&&kiteAgentTools.sync()">
+            <span class="agc-tog"></span><div class="agc-body"><div class="agc-name">File write</div><div class="agc-desc">Create &amp; edit files</div></div><span class="agc-badge ask">ASK</span></label>
+          <label class="agc-card" for="ag-t-shell"><input type="checkbox" id="ag-t-shell" class="agc-cb" onchange="kiteAgentTools&&kiteAgentTools.sync()">
+            <span class="agc-tog"></span><div class="agc-body"><div class="agc-name">Shell exec</div><div class="agc-desc">Run commands in cwd</div></div><span class="agc-badge ask">ASK</span></label>
+          <label class="agc-card" for="ag-t-spawn"><input type="checkbox" id="ag-t-spawn" class="agc-cb" onchange="kiteAgentTools&&kiteAgentTools.sync()">
+            <span class="agc-tog"></span><div class="agc-body"><div class="agc-name">Spawn subagents</div><div class="agc-desc">Delegate parallel work</div></div><span class="agc-badge auto">AUTO</span></label>
+          <label class="agc-card" for="ag-t-browser"><input type="checkbox" id="ag-t-browser" class="agc-cb" onchange="kiteAgentTools&&kiteAgentTools.sync()">
+            <span class="agc-tog"></span><div class="agc-body"><div class="agc-name">Browser &amp; screenshots</div><div class="agc-desc">Puppeteer · visual analysis</div></div><span class="agc-badge ask">ASK</span></label>
+          <label class="agc-card" for="ag-t-code"><input type="checkbox" id="ag-t-code" class="agc-cb" onchange="kiteAgentTools&&kiteAgentTools.sync()">
+            <span class="agc-tog"></span><div class="agc-body"><div class="agc-name">Code interpreter</div><div class="agc-desc">Run Python / Node / PS</div></div><span class="agc-badge ask">ASK</span></label>
+          <label class="agc-card" for="ag-t-artifact"><input type="checkbox" id="ag-t-artifact" class="agc-cb" onchange="kiteAgentTools&&kiteAgentTools.sync()">
+            <span class="agc-tog"></span><div class="agc-body"><div class="agc-name">Save artifacts</div><div class="agc-desc">Files &amp; reports</div></div><span class="agc-badge auto">AUTO</span></label>
+          <label class="agc-card" for="ag-t-memory"><input type="checkbox" id="ag-t-memory" class="agc-cb" onchange="kiteAgentTools&&kiteAgentTools.sync()">
+            <span class="agc-tog"></span><div class="agc-body"><div class="agc-name">Agent memory</div><div class="agc-desc">Recall + save via Memory MCP</div></div><span class="agc-badge auto">AUTO</span></label>
         </div>
         <div id="ag-ext-tools"></div>
       </div>
@@ -1523,61 +1611,6 @@ body.light .kv-bubble{background:linear-gradient(135deg,rgba(250,250,252,.92),rg
     </div>
   </div>
 </div>
-
-<!-- ═══════════ TAB 8 · TERMINAL (real ConPTY shell) ═══════════ -->
-<div class="tab-panel" id="tab-8">
-  <div class="oc-canvas">
-    <div class="oc-win term-win">
-      <!-- macOS title bar -->
-      <div class="oc-titlebar">
-        <div class="oc-dots">
-          <span class="oc-dot oc-red"></span>
-          <span class="oc-dot oc-yellow"></span>
-          <span class="oc-dot oc-green"></span>
-        </div>
-        <div class="fox-logo" style="width:16px;height:16px;margin-right:6px;filter:drop-shadow(0 0 4px rgba(45,212,191,.4))" role="img" aria-label="Kite"></div>
-        <div class="oc-title">Terminal</div>
-      </div>
-      <!-- terminal tab bar -->
-      <div class="term-tabbar">
-        <div class="term-tabs" id="term-tabs" style="display:flex;align-items:flex-end;gap:2px"></div>
-        <button class="term-tab-plus" id="term-tab-plus" title="New tab (Ctrl+Shift+T)">+</button>
-      </div>
-      <!-- toolbar -->
-      <div class="term-toolbar">
-        <div class="term-btn-group">
-          <button class="term-btn" id="term-btn-newtab" title="New tab (Ctrl+Shift+T)">+ New Tab</button>
-          <button class="term-btn term-btn-dd" id="term-newtab-dd" title="Pick a shell">▾</button>
-        </div>
-        <button class="term-btn" id="term-btn-split-r" title="Split right">Split Right ⎸</button>
-        <button class="term-btn" id="term-btn-split-d" title="Split down">Split Down —</button>
-        <button class="term-btn" id="term-btn-clear" title="Clear focused pane">Clear</button>
-        <span class="term-toolbar-right" id="term-shell-label">PowerShell</span>
-      </div>
-      <!-- workspace (tab pages with split panes) -->
-      <div class="term-workspace" id="term-workspace"></div>
-      <!-- status bar -->
-      <div class="oc-statusbar">
-        <span class="oc-status-left" id="term-status">● live</span>
-        <span class="oc-status-right">ConPTY</span>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- terminal menus (fixed-position) -->
-<div class="term-menu" id="term-ctx">
-  <div class="term-menu-item" data-act="copy">Copy</div>
-  <div class="term-menu-item" data-act="paste">Paste</div>
-  <div class="term-menu-sep"></div>
-  <div class="term-menu-item" data-act="clear">Clear</div>
-  <div class="term-menu-sep"></div>
-  <div class="term-menu-item" data-act="split-r">Split Right</div>
-  <div class="term-menu-item" data-act="split-d">Split Down</div>
-  <div class="term-menu-sep"></div>
-  <div class="term-menu-item" data-act="close">Close Pane</div>
-</div>
-<div class="term-menu" id="term-newtab-menu"></div>
 
 </div><!-- /main -->
 
@@ -2138,7 +2171,7 @@ async function safeFetch(url,ms,opts){
 
 function applyTheme(){
   document.body.classList.toggle('light',isLight);
-  document.getElementById('theme-icon').textContent=isLight?'🌙':'☀';
+  document.getElementById('theme-icon').textContent=isLight?'◑':'◐';
   document.getElementById('theme-label').textContent=isLight?'Dark':'Light';
 }
 function toggleTheme(){isLight=!isLight;S.set('theme',isLight?'light':'dark');applyTheme()}
@@ -2159,7 +2192,6 @@ function switchTab(i){
   if(mainEl)mainEl.classList.toggle('main-kite',i===7);
   if(i===4) requestAnimationFrame(()=>{if(typeof loadApiKeysUI==='function')loadApiKeysUI();});
   if(i===7) requestAnimationFrame(()=>{if(typeof chatInit==='function')chatInit();});
-  if(i===8){window.__wantTerm=true;requestAnimationFrame(()=>{if(window.kiteTerm)window.kiteTerm.init();});}
   if(i===9)requestAnimationFrame(()=>{if(window.kiteAgents)window.kiteAgents.init();});
   if(i===10)requestAnimationFrame(()=>{if(window.kiteConnections)window.kiteConnections.init();});
   if(i===11)requestAnimationFrame(()=>{if(window.kiteMCP)window.kiteMCP.init();});
@@ -2271,7 +2303,7 @@ function ocRenderAttachChip(){
     if(!chip)return;
     if(_chatAttachment){
       chip.style.display='';
-      chip.innerHTML='📎 '+esc(_chatAttachment.name)+' <span class="oc-attach-x" onclick="ocClearAttach(event)" title="Remove">×</span>';
+      chip.innerHTML=esc(_chatAttachment.name)+' <span class="oc-attach-x" onclick="ocClearAttach(event)" title="Remove">×</span>';
     }else{chip.style.display='none';chip.innerHTML='';}
   });
 }
@@ -2421,6 +2453,56 @@ function ocLoadingHTML(word){
   return '<div class="oc-loading"><span class="oc-orb"></span><span class="oc-shimmer">'+esc(word||'Thinking')+'…</span></div>';
 }
 
+/* Answer about an attached image using whatever vision-capable provider has a
+   key (Groq llama-4 → Gemini → OpenRouter). Returns {text,model} or null. */
+async function chatAskVision(dataUrl, userText){
+  const q = userText || 'Describe this image in detail and answer any question it implies.';
+  if(GROQ_KEY){
+    // try current Groq vision models in order (IDs change as models are rotated)
+    for(const model of ['meta-llama/llama-4-scout-17b-16e-instruct','meta-llama/llama-4-maverick-17b-128e-instruct']){
+      try{
+        const r=await safeFetch('https://api.groq.com/openai/v1/chat/completions',45000,{
+          method:'POST',headers:{'Authorization':'Bearer '+GROQ_KEY,'Content-Type':'application/json'},
+          body:JSON.stringify({model,max_tokens:900,
+            messages:[{role:'user',content:[{type:'text',text:q},{type:'image_url',image_url:{url:dataUrl}}]}]})
+        });
+        const d=await r.json().catch(()=>null);
+        if(d&&d.error)continue; // model decommissioned / bad request → next candidate
+        const t=d&&d.choices&&d.choices[0]&&d.choices[0].message&&d.choices[0].message.content;
+        if(t)return{text:String(t).trim(),model:'groq · '+model.split('/').pop()+' (vision)'};
+      }catch(_){}
+    }
+  }
+  if(GEMINI_KEY){
+    try{
+      const m=dataUrl.match(/^data:([^;]+);base64,(.*)$/);
+      if(m){
+        const r=await safeFetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+encodeURIComponent(GEMINI_KEY),45000,{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({contents:[{role:'user',parts:[{text:q},{inline_data:{mime_type:m[1],data:m[2]}}]}],generationConfig:{maxOutputTokens:900}})
+        });
+        const d=await r.json().catch(()=>null);
+        const cand=d&&d.candidates&&d.candidates[0];
+        const t=cand&&cand.content&&cand.content.parts&&cand.content.parts.map(p=>p.text||'').join('');
+        if(t)return{text:String(t).trim(),model:'gemini · 2.0-flash (vision)'};
+      }
+    }catch(_){}
+  }
+  if(OPENROUTER_KEY){
+    try{
+      const r=await safeFetch('https://openrouter.ai/api/v1/chat/completions',45000,{
+        method:'POST',headers:{'Authorization':'Bearer '+OPENROUTER_KEY,'Content-Type':'application/json'},
+        body:JSON.stringify({model:'google/gemini-2.0-flash-exp:free',max_tokens:900,
+          messages:[{role:'user',content:[{type:'text',text:q},{type:'image_url',image_url:{url:dataUrl}}]}]})
+      });
+      const d=await r.json().catch(()=>null);
+      const t=d&&d.choices&&d.choices[0]&&d.choices[0].message&&d.choices[0].message.content;
+      if(t)return{text:String(t).trim(),model:'openrouter · gemini-flash (vision)'};
+    }catch(_){}
+  }
+  return null;
+}
+
 async function chatSend(docked){
   if(_chatBusy)return;
   const inp=ocActiveInput();
@@ -2430,7 +2512,7 @@ async function chatSend(docked){
   if(!_chatHistory.length)ocEnterThread();
   if(inp){inp.value='';chatAutoGrow(inp);}
   const displayText=text||'Take a look at the attached file.';
-  const attachBadge=attachment?'<div class="oc-src" style="margin:0 0 8px">📎 '+esc(attachment.name)+'</div>':'';
+  const attachBadge=attachment?'<div class="oc-src" style="margin:0 0 8px">'+esc(attachment.name)+'</div>':'';
   chatBubble('user',attachBadge+chatMarkdown(displayText));
   _chatHistory.push({role:'user',text:displayText});
   ocClearAttach();
@@ -2456,6 +2538,24 @@ async function chatSend(docked){
         kite.innerHTML='<span style="color:#a8a8a8">Image generation failed: '+esc(e.message||e)+'</span>';
         _chatHistory.push({role:'assistant',text:'(image gen failed)'});
       }
+      _chatBusy=false;if(send)send.disabled=false;
+      const di=document.getElementById('chat-input-docked');if(di)di.focus();
+      return;
+    }
+
+    // ── image attachment → vision answer ──
+    if(hasAI&&attachment&&attachment.dataUrl){
+      const v=await chatAskVision(attachment.dataUrl,displayText);
+      if(v){
+        let html=chatMarkdown(v.text);
+        html+='<div class="oc-src">'+esc(v.model)+' <span class="oc-copy" onclick="chatCopyAnswer(this)">copy</span></div>';
+        kite.innerHTML=html;
+        _chatHistory.push({role:'assistant',text:v.text});
+      }else{
+        kite.innerHTML='I can attach images, but none of your configured models can see them. Add a <b>Groq</b>, <b>Gemini</b>, or <b>OpenRouter</b> key in the <b>API Keys</b> tab for image understanding.';
+        _chatHistory.push({role:'assistant',text:'(no vision-capable provider)'});
+      }
+      document.getElementById('chat-thread').scrollTop=1e9;
       _chatBusy=false;if(send)send.disabled=false;
       const di=document.getElementById('chat-input-docked');if(di)di.focus();
       return;
@@ -2649,10 +2749,16 @@ async function localServerTranscribe(blob) {
 /* unified entry: routes to the chosen engine */
 function currentVoiceEngine(){
   const e=(S.get('apiKeys',{}).voiceEngine)||'';
-  if(e)return e;
+  // Honour an explicit non-heavy choice (groq / localserver / browser).
+  if(e&&e!=='local')return e;
+  // Prefer fast Groq cloud whisper whenever a key exists — the in-browser
+  // Transformers.js model ('local') runs a neural net on CPU/WASM and freezes
+  // the app, so it's only a last resort now, never chosen over Groq.
+  if(GROQ_KEY)return 'groq';
+  if(e==='local')return 'local';        // explicit in-browser and no Groq key
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(SR)return 'browser';
-  return GROQ_KEY?'groq':'local';
+  return 'local';
 }
 async function transcribeBlob(blob,onProgress){
   if(!blob||!blob.size)throw new Error('nothing was recorded — check mic permissions and try again');
@@ -3276,7 +3382,7 @@ document.addEventListener('DOMContentLoaded', () => {
     <span class="kv-state-text" id="kv-state">Tap to talk</span>
   </div>
   <div class="kv-perm" id="kv-perm">
-    <button class="kv-perm-btn" id="kv-perm-allow">🎤 Click to allow microphone</button>
+    <button class="kv-perm-btn" id="kv-perm-allow">Click to allow microphone</button>
     <button class="kv-perm-btn kv-perm-settings" id="kv-perm-settings" style="display:none">Open Windows Settings</button>
   </div>
   <div class="kv-eq" id="kv-eq">
@@ -3467,7 +3573,7 @@ const kiteVoice=(function(){
       grantMic();
     }catch(e){
       log('permission: DENIED',e.name+' '+e.message);
-      permAllowBtn.textContent='🎤 Click to allow microphone';
+      permAllowBtn.textContent='Click to allow microphone';
       subtitleEl.textContent='Mic blocked — enable in Windows Settings';
       subtitleEl.style.color='var(--coral)';
       permSettingsBtn.style.display='';
@@ -3488,13 +3594,15 @@ const kiteVoice=(function(){
   let recordPeak=0;      // loudest |sample| seen — used to detect silent captures
   let lastRms=0;         // most recent frame RMS — drives hands-free auto-stop
 
-  function startCapture(stream){
+  async function startCapture(stream){
     const AC=window.AudioContext||window.webkitAudioContext;
     // Use the context's NATIVE sample rate. Forcing {sampleRate:16000} made
     // WebView2 hand back a silent stream; we resample to 16kHz ourselves later.
     const ctx=new AC();
     captureRate=ctx.sampleRate;
-    if(ctx.state==='suspended')ctx.resume();
+    // WebView2 often starts the context suspended; if we don't AWAIT resume the
+    // ScriptProcessor never fires and the capture comes back empty → "too short".
+    if(ctx.state==='suspended'){ try{ await ctx.resume(); }catch(_){} }
     log('startCapture: sampleRate='+captureRate+' state='+ctx.state);
     pcmSource=ctx.createMediaStreamSource(stream);
     const bufSize=4096;
@@ -3590,7 +3698,7 @@ const kiteVoice=(function(){
       return;
     }
     recording=true;
-    audioCtx=startCapture(audioStream);
+    audioCtx=await startCapture(audioStream);
     recordStartTime=Date.now();
     setState('recording');
   }
@@ -3925,11 +4033,6 @@ const kiteVoice=(function(){
       '{"action":"agent_status"} — user asks how the agents are doing ("status", "agent status", "what are the agents doing")',
       '{"action":"approve"} — approve the agent\'s pending request ("approve", "yes do it", "go ahead")',
       '{"action":"deny"} — deny the agent\'s pending request ("deny", "no", "reject")',
-      '{"action":"run_terminal","command":"<shell command>"} — run a command in the terminal ("run npm install", "run git status")',
-      '{"action":"new_terminal"} — open a new terminal tab',
-      '{"action":"cd_terminal","folder":"<path or name>"} — change directory in the terminal ("cd to downloads", "go to C:/dev")',
-      '{"action":"explain_terminal"} — explain the last terminal output/command ("explain this", "what does this mean")',
-      '{"action":"fix_error"} — the last terminal command errored; suggest a fix ("fix this error", "fix this")',
       '{"action":"enable_mcp","name":"<server>"} — turn on an MCP server ("enable firecrawl mcp", "turn on memory")',
       '{"action":"copy_last"} — copy Kite\'s last reply to the clipboard',
       '{"action":"repeat"} — say the last spoken reply again',
@@ -3988,30 +4091,6 @@ const kiteVoice=(function(){
       setState('idle');
     }catch(e){log('askChat err',e.message);errorState(String(e.message||'chat failed').slice(0,48));}
   }
-
-  // Read the focused terminal's recent output and either explain it or suggest a fix,
-  // speaking a short summary. fixMode=true frames it as debugging the last error.
-  async function explainTerminal(fixMode){
-    const out=(window.kiteTerm&&window.kiteTerm.lastOutput)?window.kiteTerm.lastOutput(fixMode?60:40):'';
-    if(!out||!out.trim()){setState('idle');await speak('There is nothing in the terminal to '+(fixMode?'fix':'explain')+' yet');return;}
-    if(typeof kiteAsk!=='function'){setState('idle');await speak('The AI is not available right now');return;}
-    setState('thinking');
-    const sys=fixMode
-      ? 'You are a terminal debugging assistant. The user ran a command that failed. Given the terminal output, explain the likely cause in one short sentence and give the single corrected command to run. Respond as JSON: {"speak":"<one short sentence, <=22 words>","command":"<the fix command, or empty>"}. No markdown.'
-      : 'You are a terminal assistant. Explain what the following terminal output means in ONE short, plain-English sentence (<=25 words). Respond as JSON: {"speak":"<sentence>"}. No markdown.';
-    let r;try{r=await kiteAsk([{role:'system',content:sys},{role:'user',content:'Terminal output:\n'+out.slice(-2500)}]);}catch(e){setState('idle');await speak('I could not analyze that');return;}
-    let raw=(r&&r.text||'').trim();const f=raw.match(/```(?:json)?\s*([\s\S]*?)```/i);if(f)raw=f[1].trim();
-    const a=raw.indexOf('{'),b=raw.lastIndexOf('}');if(a>=0&&b>a)raw=raw.slice(a,b+1);
-    let obj=null;try{obj=JSON.parse(raw);}catch(_){}
-    const spoken=(obj&&obj.speak)||raw.slice(0,200)||'I looked at the output';
-    setState('speaking');await speak(spoken);setState('idle');
-    if(fixMode&&obj&&obj.command&&obj.command.trim()){
-      showVoiceToast('Suggested fix: '+obj.command.trim());
-      // stash the fix so "Hey Kite run it" / a follow-up can apply it
-      _lastFix=obj.command.trim();
-    }
-  }
-  let _lastFix='';
 
   async function handleUtterance(text){
     log('handleUtterance: "'+text+'"');
@@ -4110,28 +4189,6 @@ const kiteVoice=(function(){
             try{if(typeof switchTab==='function')switchTab(idx);}catch(_){}
             const spoke={7:'chat',9:'agents',8:'terminal',4:'API keys',10:'connections',11:'MCP'}[idx]||'that';
             setState('idle');await speak('Opened '+spoke);busy=false;return;
-          }
-          case 'run_terminal':{
-            const command=(cmd.command||'').trim();
-            let ok=false;
-            try{ if(window.kiteTerm&&window.kiteTerm.runCommand) ok=await window.kiteTerm.runCommand(command); }catch(e){log('run_terminal err',e)}
-            setState('idle');await speak(ok?('Running '+command):'I could not run that in the terminal');busy=false;return;
-          }
-          case 'new_terminal':{
-            try{ if(window.kiteTerm&&window.kiteTerm.newTerminal) await window.kiteTerm.newTerminal(); }catch(_){}
-            setState('idle');await speak('Opened a new terminal');busy=false;return;
-          }
-          case 'cd_terminal':{
-            const folder=(cmd.folder||'').trim();
-            let ok=false;
-            try{ if(window.kiteTerm&&window.kiteTerm.cdTo) ok=await window.kiteTerm.cdTo(folder); }catch(_){}
-            setState('idle');await speak(ok?('Changing to '+folder):'I could not change directory');busy=false;return;
-          }
-          case 'explain_terminal':{
-            await explainTerminal(false);busy=false;return;
-          }
-          case 'fix_error':{
-            await explainTerminal(true);busy=false;return;
           }
           case 'enable_mcp':{
             let res=null;
@@ -4388,13 +4445,13 @@ window.kiteConnections = (function(){
         return [
         {name:'github_list_repos',args:[],write:false,desc:'List your most recently-updated repositories.',
           run:async()=>{const d=await api('https://api.github.com/user/repos?per_page=30&sort=updated',{headers:H()});
-            return list(d,r=>`• ${r.full_name}${r.private?' 🔒':''} — ★${r.stargazers_count} · ${r.language||'—'}`);}},
+            return list(d,r=>`• ${r.full_name}${r.private?' (private)':''} — ${r.stargazers_count} stars · ${r.language||'—'}`);}},
         {name:'github_list_prs',args:['repo'],write:false,desc:'List open pull requests for owner/repo.',
           run:async a=>{const repo=need(a.repo,'repo');const d=await api(`https://api.github.com/repos/${repo}/pulls?state=open&per_page=30`,{headers:H()});
             return list(d,p=>`#${p.number} ${p.title} — @${p.user.login} (${p.head.ref}→${p.base.ref})`,'no open PRs');}},
         {name:'github_list_issues',args:['repo'],write:false,desc:'List open issues for owner/repo.',
           run:async a=>{const repo=need(a.repo,'repo');const d=await api(`https://api.github.com/repos/${repo}/issues?state=open&per_page=30`,{headers:H()});
-            return list(d.filter(i=>!i.pull_request),i=>`#${i.number} ${i.title} — @${i.user.login} · ${i.comments}💬`,'no open issues');}},
+            return list(d.filter(i=>!i.pull_request),i=>`#${i.number} ${i.title} — @${i.user.login} · ${i.comments} comments`,'no open issues');}},
         {name:'github_get_file',args:['repo','path'],write:false,desc:'Read a file from owner/repo at the given path.',
           run:async a=>{const repo=need(a.repo,'repo'),path=need(a.path,'path');
             const d=await api(`https://api.github.com/repos/${repo}/contents/${path}`,{headers:H()});
@@ -4667,7 +4724,7 @@ window.kiteConnections = (function(){
         {name:'youtube_search',args:['query'],write:false,desc:'Search videos.',
           run:async a=>{const q=need(a.query,'query');const d=await api(`${B}/search?part=snippet&type=video&maxResults=10&key=${K()}&q=${encodeURIComponent(q)}`);return list(d.items,v=>`• ${v.snippet.title} — ${v.snippet.channelTitle} · ${v.id.videoId}`);}},
         {name:'youtube_get_video',args:['id'],write:false,desc:'Video details + stats by id.',
-          run:async a=>{const id=need(a.id,'id');const d=await api(`${B}/videos?part=snippet,statistics&id=${id}&key=${K()}`);const v=d.items&&d.items[0];return v?`${v.snippet.title}\nby ${v.snippet.channelTitle}\n👁 ${v.statistics.viewCount} · 👍 ${v.statistics.likeCount}\n\n${(v.snippet.description||'').slice(0,1000)}`:'video not found';}},
+          run:async a=>{const id=need(a.id,'id');const d=await api(`${B}/videos?part=snippet,statistics&id=${id}&key=${K()}`);const v=d.items&&d.items[0];return v?`${v.snippet.title}\nby ${v.snippet.channelTitle}\n${v.statistics.viewCount} views · ${v.statistics.likeCount} likes\n\n${(v.snippet.description||'').slice(0,1000)}`:'video not found';}},
         {name:'youtube_get_channel',args:['id'],write:false,desc:'Channel details + stats by id.',
           run:async a=>{const id=need(a.id,'id');const d=await api(`${B}/channels?part=snippet,statistics&id=${id}&key=${K()}`);const c=d.items&&d.items[0];return c?`${c.snippet.title}\nsubs: ${c.statistics.subscriberCount} · videos: ${c.statistics.videoCount}\n\n${c.snippet.description||''}`:'channel not found';}},
         {name:'youtube_get_transcript',args:['id'],write:false,desc:'Fetch a video’s English caption transcript (best-effort).',
@@ -4847,9 +4904,24 @@ window.kiteConnections = (function(){
     init, render, filter, openModal, closeModal, saveModal, forget, testTool,
     /* public API for agents / voice */
     runTool,
+    // Merge a {serviceId:{key:val,…},…} object (from a dropped tokens JSON) into
+    // the connection store. Returns the number of services touched.
+    importTokens(obj){
+      if(!obj || typeof obj!=='object') return 0;
+      let n=0;
+      Object.keys(obj).forEach(id=>{
+        const v=obj[id];
+        if(v && typeof v==='object'){ store[id]=Object.assign({}, store[id]||{}, v); n++; }
+      });
+      if(n){ persist(); try{ render(); }catch(_){} }
+      return n;
+    },
     isConnected:id=>{const s=SERVICES.find(x=>x.id===id);return s?isConnected(s):false;},
     connectedServices:()=>SERVICES.filter(isConnected).map(s=>s.id),
     allTools:()=>SERVICES.flatMap(s=>s.tools.map(t=>({name:t.name,service:s.id,serviceName:s.name,write:!!t.write,args:t.args||[],desc:t.desc,connected:isConnected(s)}))),
+    // Per-service metadata (logo, colour, tool list) for the agent tool picker.
+    servicesMeta:()=>SERVICES.map(s=>({id:s.id,name:s.name,color:s.color||'#9a9a9a',letter:s.letter||(s.name||'?').slice(0,2),icon:s.icon||'',blurb:s.blurb||'',connected:isConnected(s),
+      tools:s.tools.map(t=>({name:t.name,write:!!t.write,args:t.args||[],desc:t.desc}))})),
   };
 })();
 </script>
@@ -4908,7 +4980,7 @@ window.kiteMCP = (function(){
       command:'npx', args:['-y','exa-mcp-server'],
       configFields:[{key:'EXA_API_KEY',label:'Exa API key',placeholder:'exa_…',kind:'env',required:true,hint:'Free key at <a href="https://exa.ai" target="_blank" rel="noopener">exa.ai</a>'}],
       tools:['search','find_similar','get_contents'] },
-    { id:'firecrawl', name:'Firecrawl', desc:'Advanced web scraping and crawling', icon:letterIcon('🔥','#F97316'),
+    { id:'firecrawl', name:'Firecrawl', desc:'Advanced web scraping and crawling', icon:letterIcon('Fc','#F97316'),
       command:'npx', args:['-y','firecrawl-mcp'],
       configFields:[{key:'FIRECRAWL_API_KEY',label:'Firecrawl API key',placeholder:'fc-…',kind:'env',required:true,hint:'Key at <a href="https://firecrawl.dev" target="_blank" rel="noopener">firecrawl.dev</a>'}],
       tools:['scrape','crawl','search','extract'] },
@@ -5070,6 +5142,10 @@ window.kiteMCP = (function(){
       r.status='running'; r.restarts=0; r.error='';
     }catch(e){
       r.status='error'; r.error=(e&&e.message)||String(e);
+      // surface the server's own stderr so the user sees EXACTLY why it failed
+      // (missing package, bad key, node not on PATH, …) rather than a bare timeout.
+      const tail=(r.stderr||[]).filter(Boolean).slice(-4).join('  ·  ');
+      if(tail) r.error += '  —  ' + tail;
       if(def.type!=='http'){ try{ await nativeInvoke('mcp_stop',{id:def.id}); }catch(_){} }
     }
     renderCard(def); updateCount();
@@ -5228,6 +5304,39 @@ window.kiteMCP = (function(){
     openCustom, closeCustom, customTypeChange, saveCustom, removeCustom, importConfig,
     /* public API for agents / voice */
     callTool,
+    // Like callTool but returns the RAW MCP result ({content:[...]}) instead of
+    // flattened text — used by the agent's screenshot tool to reach the image bytes.
+    async callToolRaw(serverId, toolName, args, opts){
+      opts=opts||{};
+      const def=findDef(serverId); if(!def) throw new Error('unknown MCP server: '+serverId);
+      if(rt(serverId).status!=='running') throw new Error(def.name+' MCP server is not running');
+      if(!opts.noApproval && !isAlways('mcp__'+serverId+'__'+toolName)){
+        const ok=await approve('Run MCP tool', 'mcp__'+serverId+'__'+toolName+'\n\nArgs: '+JSON.stringify(args||{}));
+        if(!ok) throw new Error('MCP tool denied by user');
+      }
+      return def.type==='http' ? await httpRpc(def,'tools/call',{name:toolName,arguments:args||{}}) : await rpc(serverId,'tools/call',{name:toolName,arguments:args||{}});
+    },
+    // Ensure a server (matched by loose name) is enabled AND running, starting or
+    // restarting it if needed. Resolves to its def id, or throws with the reason.
+    async ensureServer(name){
+      const n = String(name||'').toLowerCase().replace(/\bmcp\b/g,'').replace(/[^a-z0-9 ]/g,'').trim();
+      if(!n) throw new Error('no server name given');
+      const defs = allDefs();
+      const def = defs.find(d => d.id.toLowerCase() === n)
+               || defs.find(d => d.name.toLowerCase() === n)
+               || defs.find(d => d.name.toLowerCase().includes(n) || d.id.toLowerCase().includes(n))
+               || defs.find(d => n.split(' ').some(w => w.length>2 && (d.name.toLowerCase().includes(w)||d.id.toLowerCase().includes(w))));
+      if(!def) throw new Error('no MCP server matches "'+name+'"');
+      if(rt(def.id).status!=='running'){
+        if(!isEnabled(def.id)){ store.enabled[def.id]=true; persist(); }
+        rt(def.id).restarts=0;
+        await startServer(def);
+        // give a slow first-launch (npx download) a moment to come up
+        for(let i=0;i<20 && rt(def.id).status==='starting';i++){ await new Promise(r=>setTimeout(r,500)); }
+      }
+      if(rt(def.id).status!=='running') throw new Error(def.name+' failed to start: '+(rt(def.id).error||'unknown'));
+      return def.id;
+    },
     // Voice: enable a server by loose spoken name ("firecrawl", "memory", "brave").
     // Returns { id, name, already } or null if no server matches.
     async enableByName(name){
@@ -5247,6 +5356,9 @@ window.kiteMCP = (function(){
     serverNames:()=>allDefs().map(d=>({id:d.id,name:d.name,enabled:isEnabled(d.id)})),
     runningServers:()=>allDefs().filter(d=>rt(d.id).status==='running').map(d=>d.id),
     enabledTools:()=>allDefs().filter(d=>rt(d.id).status==='running').flatMap(d=>rt(d.id).tools.map(t=>({name:'mcp__'+d.id+'__'+t.name, server:d.id, serverName:d.name, tool:t.name, desc:t.description||'', schema:t.inputSchema||null, always:isAlways('mcp__'+d.id+'__'+t.name)}))),
+    // Per-server metadata (icon, status, tool list) for the agent tool picker.
+    serversMeta:()=>allDefs().map(d=>{const r=rt(d.id);return {id:d.id,name:d.name,icon:d.icon||letterIcon((d.name||'?')[0],'#9a9a9a'),status:r.status,running:r.status==='running',
+      tools:(r.tools||[]).map(t=>({name:t.name,full:'mcp__'+d.id+'__'+t.name,desc:t.description||'',always:isAlways('mcp__'+d.id+'__'+t.name)}))};}),
   };
 })();
 </script>
@@ -5271,6 +5383,76 @@ window.kiteMCP = (function(){
     const inv = window.__TAURI_INTERNALS__ && window.__TAURI_INTERNALS__.invoke;
     if (!inv) return Promise.reject(new Error('native bridge unavailable'));
     return inv(cmd, args);
+  }
+
+  /* ══ browser (Puppeteer MCP) + vision helpers for screenshot/page tools ══ */
+  async function ensurePuppeteer(){
+    if (!window.kiteMCP || !window.kiteMCP.ensureServer) throw new Error('MCP subsystem unavailable — open the MCP tab once to initialize it');
+    return await window.kiteMCP.ensureServer('puppeteer');
+  }
+  function puppRaw(id, tool, args){ return window.kiteMCP.callToolRaw(id, tool, args, { noApproval: true }); }
+  function mcpImageOf(res){
+    if (res && Array.isArray(res.content)){
+      const img = res.content.find(c => c && c.type === 'image' && c.data);
+      if (img) return 'data:' + (img.mimeType || 'image/png') + ';base64,' + img.data;
+    }
+    return null;
+  }
+  function mcpTextOf(res){
+    if (res && Array.isArray(res.content)) return res.content.filter(c => c && c.type === 'text').map(c => c.text || '').join('\n').trim();
+    return '';
+  }
+  // JS snippet run inside the page to pull innerText for a selector (used by extract tools).
+  function extractSnippet(sel){
+    return 'Array.from(document.querySelectorAll(' + JSON.stringify(sel) + ')).map(function(e){return (e.innerText||e.textContent||"").trim();}).filter(Boolean).slice(0,50).join("\\n---\\n")';
+  }
+  /* Describe a screenshot with whatever vision-capable provider has a key.
+     Returns descriptive text, or null if none is configured / all fail. */
+  async function visionDescribe(dataUri, prompt){
+    const q = prompt || 'Describe this screenshot in detail: overall layout, all readable text, key UI elements, colors, and anything notable or unusual.';
+    if (typeof GROQ_KEY !== 'undefined' && GROQ_KEY){
+      for (const model of ['meta-llama/llama-4-scout-17b-16e-instruct','meta-llama/llama-4-maverick-17b-128e-instruct']){
+        try {
+          const r = await safeFetch('https://api.groq.com/openai/v1/chat/completions', 45000, {
+            method:'POST', headers:{ 'Authorization':'Bearer '+GROQ_KEY, 'Content-Type':'application/json' },
+            body: JSON.stringify({ model, max_tokens:700,
+              messages:[{ role:'user', content:[{ type:'text', text:q }, { type:'image_url', image_url:{ url:dataUri } }] }] })
+          });
+          const d = await r.json().catch(()=>null);
+          if (d && d.error) continue;
+          const t = d && d.choices && d.choices[0] && d.choices[0].message && d.choices[0].message.content;
+          if (t) return String(t).trim() + '\n\n— via groq · ' + model.split('/').pop() + ' (vision)';
+        } catch(_){}
+      }
+    }
+    try {
+      if (typeof GEMINI_KEY !== 'undefined' && GEMINI_KEY){
+        const m = dataUri.match(/^data:([^;]+);base64,(.*)$/);
+        if (m){
+          const r = await safeFetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+encodeURIComponent(GEMINI_KEY), 45000, {
+            method:'POST', headers:{ 'Content-Type':'application/json' },
+            body: JSON.stringify({ contents:[{ role:'user', parts:[{ text:q }, { inline_data:{ mime_type:m[1], data:m[2] } }] }], generationConfig:{ maxOutputTokens:800 } })
+          });
+          const d = await r.json().catch(()=>null);
+          const cand = d && d.candidates && d.candidates[0];
+          const t = cand && cand.content && cand.content.parts && cand.content.parts.map(p=>p.text||'').join('');
+          if (t) return String(t).trim() + '\n\n— via gemini · 2.0-flash (vision)';
+        }
+      }
+    } catch(_){}
+    try {
+      if (typeof OPENROUTER_KEY !== 'undefined' && OPENROUTER_KEY){
+        const r = await safeFetch('https://openrouter.ai/api/v1/chat/completions', 45000, {
+          method:'POST', headers:{ 'Authorization':'Bearer '+OPENROUTER_KEY, 'Content-Type':'application/json' },
+          body: JSON.stringify({ model:'google/gemini-2.0-flash-exp:free', max_tokens:700,
+            messages:[{ role:'user', content:[{ type:'text', text:q }, { type:'image_url', image_url:{ url:dataUri } }] }] })
+        });
+        const d = await r.json().catch(()=>null);
+        const t = d && d.choices && d.choices[0] && d.choices[0].message && d.choices[0].message.content;
+        if (t) return String(t).trim() + '\n\n— via openrouter (vision)';
+      }
+    } catch(_){}
+    return null;
   }
 
   /* ══ TOOL REGISTRY ══ */
@@ -5326,26 +5508,8 @@ window.kiteMCP = (function(){
         if (!command) throw new Error('shell_exec needs args.command');
         a._execSeq = (a._execSeq || 0) + 1;
         const execId = a.id + '-x' + a._execSeq;
-        // ensure a live terminal pane named after the agent
-        if (!a.termView && window.kiteTerm && window.kiteTerm.openAgentView){
-          try { a.termView = await window.kiteTerm.openAgentView(a.name); } catch(_){}
-        }
-        if (a.termView) a.termView.write('\r\n\x1b[38;5;80m❯ ' + command + '\x1b[0m\r\n');
-        // stream output lines into the pane as they arrive
-        let unlisten = null;
-        if (window.kiteListen){
-          try {
-            unlisten = await window.kiteListen('agent-shell', e => {
-              const p = e.payload; if (!p || p.execId !== execId) return;
-              if (a.termView) a.termView.write((p.stream === 'err' ? '\x1b[38;5;209m' : '') + p.chunk + '\x1b[0m\r\n');
-            });
-          } catch(_){}
-        }
-        try {
-          return await nativeInvoke('agent_shell_exec', { req: { cwd: a.cwd || '', command, execId } });
-        } finally {
-          if (typeof unlisten === 'function') { try { unlisten(); } catch(_){} }
-        }
+        // runs via Rust; the full stdout/stderr comes back as the tool result
+        return await nativeInvoke('agent_shell_exec', { req: { cwd: a.cwd || '', command, execId } });
       }
     },
     spawn_subagent: {
@@ -5367,6 +5531,121 @@ window.kiteMCP = (function(){
         pushAct(a, { t: 'info', text: '⑂ spawned subagent "' + name + '"' });
         const res = await runAgent(child);
         return 'Subagent "' + name + '" finished (' + res.status + '):\n' + (res.result || '(no result)');
+      }
+    },
+    screenshot_url: {
+      flag: 'browser', approval: false,
+      desc: 'screenshot_url — args {"url": string, "selector"?: string, "analyze"?: boolean|string}. Open the URL in a headless browser and capture a screenshot (whole page, or one CSS selector). The image is shown inline in the activity stream. Set analyze:true (or analyze:"<question>") to also get a vision-model description of what the page shows.',
+      run: async (a, args) => {
+        const url = args && args.url;
+        if (!url) throw new Error('screenshot_url needs args.url');
+        const pid = await ensurePuppeteer();
+        await puppRaw(pid, 'puppeteer_navigate', { url });
+        const shotArgs = { name: 'kite-' + a.id + '-' + ((a._shotSeq = (a._shotSeq || 0) + 1)), width: 1280, height: 800 };
+        if (args.selector) shotArgs.selector = args.selector;
+        const res = await puppRaw(pid, 'puppeteer_screenshot', shotArgs);
+        const dataUri = mcpImageOf(res);
+        if (!dataUri) return 'Screenshot requested but no image was returned by Puppeteer. ' + (mcpTextOf(res) || '');
+        a.artifacts = a.artifacts || [];
+        a.artifacts.push({ kind: 'image', name: (args.selector ? 'element' : 'page') + ' · ' + url, src: dataUri });
+        pushAct(a, { t: 'image', src: dataUri, caption: url });
+        if (AG.selected === a.id) renderDetail(a);
+        let out = 'Screenshot of ' + url + ' captured' + (args.selector ? (' (selector "' + args.selector + '")') : '') + ' and shown in the activity stream.';
+        if (args.analyze){
+          pushAct(a, { t: 'info', text: 'Analyzing the screenshot with a vision model…' });
+          if (AG.selected === a.id) renderStream(a);
+          const desc = await visionDescribe(dataUri, typeof args.analyze === 'string' ? args.analyze : '');
+          if (desc){ pushAct(a, { t: 'thinking-done', text: 'Vision: ' + desc.slice(0, 300) + (desc.length > 300 ? '…' : '') }); out += '\n\nVisual analysis:\n' + desc; }
+          else out += '\n(No vision-capable provider available — add a Groq, Gemini, or OpenRouter key to analyze screenshots visually.)';
+        }
+        return out;
+      }
+    },
+    page_extract: {
+      flag: 'browser', approval: false,
+      desc: 'page_extract — args {"url": string, "selector": string}. Load the URL and return the text content of every element matching a CSS selector (first 50).',
+      run: async (a, args) => {
+        const url = args && args.url, sel = args && args.selector;
+        if (!url || !sel) throw new Error('page_extract needs args.url and args.selector');
+        const pid = await ensurePuppeteer();
+        await puppRaw(pid, 'puppeteer_navigate', { url });
+        const res = await puppRaw(pid, 'puppeteer_evaluate', { script: extractSnippet(sel) });
+        const txt = mcpTextOf(res);
+        return txt ? txt.slice(0, 6000) : '(no elements matched "' + sel + '")';
+      }
+    },
+    page_wait_and_extract: {
+      flag: 'browser', approval: false,
+      desc: 'page_wait_and_extract — args {"url": string, "selector": string, "wait_ms"?: number}. Load the URL, wait for JavaScript-rendered content (default 2000ms, max 15000), then return the text of elements matching the selector. Use for dynamic / SPA pages.',
+      run: async (a, args) => {
+        const url = args && args.url, sel = args && args.selector;
+        if (!url || !sel) throw new Error('page_wait_and_extract needs args.url and args.selector');
+        const pid = await ensurePuppeteer();
+        await puppRaw(pid, 'puppeteer_navigate', { url });
+        const wait = Math.min(Math.max(parseInt(args.wait_ms, 10) || 2000, 0), 15000);
+        await new Promise(r => setTimeout(r, wait));
+        const res = await puppRaw(pid, 'puppeteer_evaluate', { script: extractSnippet(sel) });
+        const txt = mcpTextOf(res);
+        return txt ? txt.slice(0, 6000) : '(no elements matched "' + sel + '" after ' + wait + 'ms)';
+      }
+    },
+    page_click: {
+      flag: 'browser', approval: false,
+      desc: 'page_click — args {"url"?: string, "selector": string}. Click the element matching a CSS selector (optionally navigating to url first).',
+      run: async (a, args) => {
+        const sel = args && args.selector;
+        if (!sel) throw new Error('page_click needs args.selector');
+        const pid = await ensurePuppeteer();
+        if (args.url) await puppRaw(pid, 'puppeteer_navigate', { url: args.url });
+        const res = await puppRaw(pid, 'puppeteer_click', { selector: sel });
+        return mcpTextOf(res) || ('clicked "' + sel + '"');
+      }
+    },
+    page_fill: {
+      flag: 'browser', approval: true,
+      desc: 'page_fill — args {"url"?: string, "selector": string, "value": string}. Type a value into an input/textarea matching a CSS selector (asks the user for permission).',
+      run: async (a, args) => {
+        const sel = args && args.selector;
+        if (!sel) throw new Error('page_fill needs args.selector');
+        const pid = await ensurePuppeteer();
+        if (args.url) await puppRaw(pid, 'puppeteer_navigate', { url: args.url });
+        const res = await puppRaw(pid, 'puppeteer_fill', { selector: sel, value: (args && args.value) || '' });
+        return mcpTextOf(res) || ('filled "' + sel + '"');
+      }
+    },
+    run_code: {
+      flag: 'code', approval: true,
+      desc: 'run_code — args {"language": string, "code": string, "timeout_secs"?: number}. Execute a code snippet and return exit code + stdout/stderr. Languages: python, javascript (node), powershell, bash, typescript, ruby. Runs in the working directory; asks the user for permission. Default timeout 30s (max 300).',
+      run: async (a, args) => {
+        const language = String((args && args.language) || '').trim();
+        const code = args && args.code;
+        if (!language) throw new Error('run_code needs args.language');
+        if (!code) throw new Error('run_code needs args.code');
+        a._execSeq = (a._execSeq || 0) + 1;
+        const execId = a.id + '-c' + a._execSeq;
+        pushAct(a, { t: 'code', lang: language, code: String(code) });
+        if (AG.selected === a.id) renderDetail(a);
+        const to = Math.min(Math.max(parseInt(args.timeout_secs, 10) || 30, 1), 300);
+        const lower = language.toLowerCase();
+        // shell languages reuse the tested shell_exec path; native langs go to run_code
+        if (['powershell','ps','pwsh','bash','sh','shell','cmd'].includes(lower)){
+          return await nativeInvoke('agent_shell_exec', { req: { cwd: a.cwd || '', command: String(code), execId } });
+        }
+        return await nativeInvoke('agent_run_code', { req: { language, code: String(code), cwd: a.cwd || '', execId, timeoutSecs: to } });
+      }
+    },
+    save_artifact: {
+      flag: 'artifact', approval: false,
+      desc: 'save_artifact — args {"name": string, "content": string, "type"?: "code"|"report"|"data"|"text"}. Save a named output artifact, shown with a download button in the activity stream. Use for final reports, generated code, or data files.',
+      run: async (a, args) => {
+        const name = (args && args.name) || 'artifact.txt';
+        const content = (args && args.content) != null ? String(args.content) : '';
+        const type = (args && args.type) || 'text';
+        a.artifacts = a.artifacts || [];
+        a.artifacts.push({ kind: 'file', name, type, content, size: content.length });
+        pushAct(a, { t: 'artifact', name, atype: type, size: content.length, content });
+        if (AG.selected === a.id) renderDetail(a);
+        return 'Saved artifact "' + name + '" (' + content.length + ' bytes, ' + type + ').';
       }
     }
   };
@@ -5414,20 +5693,109 @@ window.kiteMCP = (function(){
     }));
     return groups;
   }
+  /* ── source card (a Connection service or MCP server) with expandable
+        sub-tools. Each individual tool is an `.ag-ext-cb` checkbox whose
+        data-tool matches its AG_TOOLS key — the master toggle drives them all.
+        startFromForm() still reads `#ag-ext-tools .ag-ext-cb:checked`. ── */
+  function subCardHTML(dataTool, label){
+    return '<label class="agc-subcard"><input type="checkbox" class="agc-cb ag-ext-cb" data-tool="' + esc2(dataTool)
+      + '" onchange="kiteAgentTools&&kiteAgentTools.sync()"><span class="agc-subname">' + esc2(label)
+      + '</span><span class="agc-tog"></span></label>';
+  }
+  function srcCardHTML(o){
+    // o: {key, name, logoHTML, sub:[{dataTool,label}], enabled, statusHTML, meta, connectHTML}
+    const disabled = !o.enabled;
+    const sub = (o.sub || []).map(s => subCardHTML(s.dataTool, s.label)).join('');
+    return '<div class="agc-src' + (disabled ? ' disabled' : '') + '" data-src="' + esc2(o.key) + '">' +
+      '<div class="agc-src-head">' +
+        '<div class="agc-src-logo">' + o.logoHTML + '</div>' +
+        '<div class="agc-src-titles"><div class="agc-src-name">' + esc2(o.name) + (o.statusHTML || '') + '</div>' +
+          '<div class="agc-toolbadge">' + esc2((o.sub || []).length + ' tool' + ((o.sub || []).length === 1 ? '' : 's')) + (o.meta ? ' · ' + esc2(o.meta) : '') + '</div></div>' +
+        (disabled ? (o.connectHTML || '')
+          : '<span class="agc-tog agc-master" onclick="kiteAgentTools&&kiteAgentTools.toggleSource(event,\'' + esc2(o.key) + '\')"></span>' +
+            '<button type="button" class="agc-exp" onclick="kiteAgentTools&&kiteAgentTools.toggleExpand(event,\'' + esc2(o.key) + '\')">▸</button>') +
+      '</div>' +
+      (disabled ? '' : '<div class="agc-sub">' + sub + '</div>') +
+    '</div>';
+  }
   function renderExtTools(){
     const host = $('ag-ext-tools'); if (!host) return;
-    const groups = registerExternalTools();
-    if (!groups.length){
-      host.innerHTML = '<div class="ag-ext-empty">No Connections or MCP tools available yet — set them up in the '
-        + '<a onclick="switchTab(10)">Connections</a> or <a onclick="switchTab(11)">MCP</a> tabs, then reopen this form.</div>';
-      return;
+    registerExternalTools();   // keep AG_TOOLS in sync with live tools
+    let html = '';
+
+    /* ── Connections ── */
+    let conns = [];
+    try{ conns = (window.kiteConnections && window.kiteConnections.servicesMeta) ? window.kiteConnections.servicesMeta() : []; }catch(_){ }
+    if (conns.length){
+      const connCount = conns.filter(c => c.connected).length;
+      html += '<div class="agc-sec-h"><span class="agc-sec-t">Connections</span><span class="agc-sec-c">' + connCount + ' connected</span></div>';
+      html += conns.map(c => srcCardHTML({
+        key: 'conn:' + c.id,
+        name: c.name,
+        logoHTML: c.icon || ('<span class="agc-letter" style="background:' + esc2(c.color) + '">' + esc2(c.letter) + '</span>'),
+        enabled: c.connected,
+        meta: c.blurb,
+        connectHTML: '<a class="agc-connect" onclick="switchTab(10)">Connect →</a>',
+        sub: c.tools.map(t => ({ dataTool: t.name, label: t.name.replace(c.id + '_', '') + (t.write ? '  ·  write' : '') }))
+      })).join('');
     }
-    host.innerHTML = groups.map(g =>
-      '<div class="ag-toolgroup-h">' + esc2(g.group) + '</div><div class="ag-tools">' +
-      g.tools.map(t => '<label class="ag-check"><input type="checkbox" class="ag-ext-cb" data-tool="' + esc2(t.name) + '"> ' + esc2(t.label) + (t.write ? ' <em>write</em>' : '') + '</label>').join('') +
-      '</div>'
-    ).join('');
+
+    /* ── MCP servers ── */
+    let servers = [];
+    try{ servers = (window.kiteMCP && window.kiteMCP.serversMeta) ? window.kiteMCP.serversMeta() : []; }catch(_){ }
+    // only surface servers that are running (have live tools) or currently starting
+    const running = servers.filter(s => s.running);
+    html += '<div class="agc-sec-h"><span class="agc-sec-t">MCP Servers</span><span class="agc-sec-c">' + running.length + ' running</span></div>';
+    if (!running.length){
+      html += '<div class="agc-ext-empty">No MCP servers running yet — enable one in the <a onclick="switchTab(11)">MCP</a> tab, then reopen this form.</div>';
+    } else {
+      html += running.map(s => srcCardHTML({
+        key: 'mcp:' + s.id,
+        name: s.name,
+        logoHTML: s.icon,
+        enabled: true,
+        statusHTML: '<span class="agc-statedot running"></span>',
+        sub: s.tools.map(t => ({ dataTool: t.full, label: t.name }))
+      })).join('');
+    }
+
+    host.innerHTML = html;
+    if (window.kiteAgentTools) window.kiteAgentTools.sync();
   }
+
+  /* helper published for the tool-picker cards */
+  window.kiteAgentTools = {
+    sync(){
+      // reflect the "any child checked" state onto each source card's teal accent
+      document.querySelectorAll('#ag-ext-tools .agc-src').forEach(src => {
+        const boxes = src.querySelectorAll('.ag-ext-cb');
+        const on = Array.from(boxes).some(b => b.checked);
+        src.classList.toggle('on', on);
+        const master = src.querySelector('.agc-master');
+        if (master){
+          const all = boxes.length && Array.from(boxes).every(b => b.checked);
+          master.classList.toggle('agc-on', !!all);
+          master.style.background = all ? 'var(--teal,#2dd4bf)' : (on ? 'rgba(45,212,191,.4)' : '');
+          const knob = all ? 'translateX(13px)' : 'translateX(0)';
+          master.style.setProperty('--knob', knob);
+        }
+      });
+    },
+    toggleSource(ev, key){
+      if (ev){ ev.preventDefault(); ev.stopPropagation(); }
+      const src = document.querySelector('#ag-ext-tools .agc-src[data-src="' + (window.CSS && CSS.escape ? CSS.escape(key) : key) + '"]');
+      if (!src) return;
+      const boxes = src.querySelectorAll('.ag-ext-cb');
+      const turnOn = !Array.from(boxes).every(b => b.checked);
+      boxes.forEach(b => { b.checked = turnOn; });
+      this.sync();
+    },
+    toggleExpand(ev, key){
+      if (ev){ ev.preventDefault(); ev.stopPropagation(); }
+      const src = document.querySelector('#ag-ext-tools .agc-src[data-src="' + (window.CSS && CSS.escape ? CSS.escape(key) : key) + '"]');
+      if (src) src.classList.toggle('expanded');
+    }
+  };
 
   /* ── system prompt (spec §5 + ReAct protocol) ── */
   function sysPrompt(a){
@@ -5491,8 +5859,28 @@ window.kiteMCP = (function(){
 
   /* ── activity stream ── */
   function pushAct(a, item){
+    if (item && item.ts == null) item.ts = Date.now();
     a.activity.push(item);
-    if (AG.selected === a.id) renderStream(a);
+    if (AG.selected === a.id && (AG.dtab || 'activity') === 'activity') renderStream(a);
+    if (AG.selected === a.id) updateDTabCounts(a);
+  }
+  function fmtTs(ts){
+    if (!ts) return '';
+    const d = new Date(ts);
+    const p = n => String(n).padStart(2, '0');
+    return p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds());
+  }
+  /* tool → glyph + colour class for the activity stream (geometric symbols, no emoji) */
+  function toolIconInfo(name, ask){
+    const n = String(name || '');
+    if (n.indexOf('mcp__') === 0) return { g: '▸', cls: 'mcp' };
+    if (window.kiteConnections){ try{ if (window.kiteConnections.allTools().some(t => t.name === n)) return { g: '◆', cls: 'conn' }; }catch(_){ } }
+    const map = {
+      web_fetch: '↗', file_read: '▤', file_write: '✎', shell_exec: '>_',
+      spawn_subagent: '⑃', screenshot_url: '▣', page_click: '▣', page_extract: '▣',
+      page_fill: '▣', run_code: '‹/›', save_artifact: '▦'
+    };
+    return { g: map[n] || '●', cls: ask ? 'ask' : '' };
   }
   function account(a, promptStr, respStr){
     a.tokIn += estTok(promptStr);
@@ -5529,6 +5917,7 @@ window.kiteMCP = (function(){
   function finish(a, status, msg){
     a.status = status;
     a.running = false;
+    a.endedAt = Date.now();
     if (status === 'done') pushAct(a, { t: 'done', text: msg || '(no result)' });
     else if (status === 'error') pushAct(a, { t: 'error', text: '✗ ' + (msg || 'failed') });
     else if (status === 'cancelled') pushAct(a, { t: 'error', text: '■ cancelled' });
@@ -5585,7 +5974,7 @@ window.kiteMCP = (function(){
     return children.map(c => c.result);
   }
   async function coordinate(a){
-    a.status = 'running'; a.running = true;
+    a.status = 'running'; a.running = true; a.startedAt = Date.now(); a.endedAt = 0;
     const C = a.coord = a.coord || {};
     renderList(); if (AG.selected === a.id) renderDetail(a); updateBadge();
     pushAct(a, { t: 'goal', text: a.task });
@@ -5624,7 +6013,7 @@ window.kiteMCP = (function(){
     // auto-enable any MCP servers the plan requested
     if (C.autoTools !== false){
       const hints = workers.flatMap(w => Array.isArray(w.tools) ? w.tools : []);
-      if (hints.length){ pushAct(a, { t: 'info', text: '🔌 Enabling required tools…' }); await enableHintsBestEffort(hints); if (a.cancelled) return finish(a, 'cancelled'); }
+      if (hints.length){ pushAct(a, { t: 'info', text: 'Enabling required tools…' }); await enableHintsBestEffort(hints); if (a.cancelled) return finish(a, 'cancelled'); }
     }
 
     // 2) SPAWN + RUN in parallel
@@ -5670,12 +6059,28 @@ window.kiteMCP = (function(){
 
   /* ── the agent loop ── */
   async function runAgent(a){
+    // Ensure live Connections/MCP tools are registered into AG_TOOLS before the
+    // agent starts — agents launched via voice, projects or coordinator never
+    // opened the form (which is the other place this runs), so without this an
+    // enabled conn__/mcp__ tool would be reported as "unknown/disabled tool".
+    try { registerExternalTools(); } catch(_){ }
     if (a.engine === 'coordinator') return coordinate(a);
-    a.status = 'running'; a.running = true;
+    a.status = 'running'; a.running = true; a.startedAt = Date.now(); a.endedAt = 0;
     renderList(); if (AG.selected === a.id) renderDetail(a);
     updateBadge();
     pushAct(a, { t: 'goal', text: a.task });
     a.history = [{ role: 'system', content: sysPrompt(a) }, { role: 'user', content: a.task }];
+
+    // memory recall: inject relevant prior context into the system prompt
+    if (a.memory && window.kiteMemory){
+      try {
+        pushAct(a, { t: 'info', text: 'Recalling relevant memory…' });
+        const mem = await window.kiteMemory.recall(a.task);
+        if (mem){ a.memRecalled = mem; a.history[0].content += '\n\nPrevious relevant context from your memory:\n' + mem; pushAct(a, { t: 'thinking-done', text: 'Recalled memory context.' }); }
+        else pushAct(a, { t: 'info', text: 'No prior memory matched.' });
+      } catch(_){}
+      if (a.cancelled) return finish(a, 'cancelled');
+    }
 
     for (a.iter = 0; a.iter < MAX_ITER; a.iter++){
       if (a.cancelled) return finish(a, 'cancelled');
@@ -5704,7 +6109,14 @@ window.kiteMCP = (function(){
 
       if (act.done){
         a.history.push({ role: 'assistant', content: text });
-        return finish(a, 'done', act.result != null ? act.result : text);
+        const finalResult = act.result != null ? act.result : text;
+        // memory save: extract + store durable facts (best-effort, non-blocking)
+        if (a.memory && window.kiteMemory){
+          window.kiteMemory.remember(a.task, finalResult, a.liveModel)
+            .then(n => { if (n) pushAct(a, { t: 'info', text: 'Saved ' + n + ' fact' + (n>1?'s':'') + ' to memory.' }); })
+            .catch(()=>{});
+        }
+        return finish(a, 'done', finalResult);
       }
 
       // tool call
@@ -5712,27 +6124,38 @@ window.kiteMCP = (function(){
       a.history.push({ role: 'assistant', content: text });
       if (act.thought) pushAct(a, { t: 'thinking-done', text: act.thought });
       if (!tool || !a.tools[tool.flag]){
-        pushAct(a, { t: 'toolresult', text: 'unknown/disabled tool: ' + act.tool });
-        a.history.push({ role: 'user', content: 'Tool "' + act.tool + '" is not available. Use only the listed tools or finish.' });
+        // give an EXACT reason, especially for external tools whose backend is down
+        let why;
+        if (String(act.tool).indexOf('mcp__') === 0){
+          const srv = String(act.tool).split('__')[1] || '';
+          why = 'MCP tool "' + act.tool + '" is not available — its server (' + srv + ') is not running. Enable it in the MCP tab.';
+        } else if (window.kiteConnections && (()=>{ try{ return window.kiteConnections.allTools().some(t=>t.name===act.tool && !t.connected); }catch(_){ return false; } })()){
+          why = 'Connection tool "' + act.tool + '" is not available — that service is not connected. Connect it in the Connections tab.';
+        } else {
+          why = 'Tool "' + act.tool + '" is not available. Use only the listed tools or finish.';
+        }
+        pushAct(a, { t: 'toolresult', text: why, err: true });
+        a.history.push({ role: 'user', content: why });
         renderList(); continue;
       }
-      pushAct(a, { t: 'toolcall', name: act.tool, args: act.args });
+      pushAct(a, { t: 'toolcall', name: act.tool, args: act.args, ask: !!tool.approval });
 
       if (tool.approval){
         const ok = await requestApproval(a, act.tool, act.args || {});
         if (a.cancelled) return finish(a, 'cancelled');
         if (!ok){
-          pushAct(a, { t: 'toolresult', text: 'DENIED by user' });
+          pushAct(a, { t: 'toolresult', text: 'DENIED by user', err: true });
           a.history.push({ role: 'user', content: 'Tool "' + act.tool + '" was DENIED by the user. Do not retry it; find another approach or finish.' });
           renderList(); continue;
         }
       }
 
-      let result;
+      let result, isErr = false;
       try { result = await tool.run(a, act.args || {}); }
-      catch(e){ result = 'ERROR: ' + ((e && e.message) || String(e)); }
+      catch(e){ result = 'ERROR: ' + ((e && e.message) || String(e)); isErr = true; }
       if (a.cancelled) return finish(a, 'cancelled');
-      pushAct(a, { t: 'toolresult', text: String(result).slice(0, 600) });
+      if (!isErr && /^ERROR[:\s]/i.test(String(result))) isErr = true;
+      pushAct(a, { t: 'toolresult', text: String(result).slice(0, 600), err: isErr });
       a.history.push({ role: 'user', content: 'Tool result (' + act.tool + '):\n' + String(result).slice(0, 4000) });
       renderList(); if (AG.selected === a.id) renderDetail(a);
     }
@@ -5749,26 +6172,60 @@ window.kiteMCP = (function(){
     if (title) title.textContent = n ? 'AGENTS · ' + n + ' RUNNING' : 'AGENTS';
   }
 
+  function typeInfo(a){
+    if (a.engine === 'coordinator') return { label: 'CO', color: '#e0c07b' };
+    if (a.depth) return { label: 'SUB', color: '#61afef' };
+    const s = (String(a.task || '') + ' ' + String(a.name || '')).toLowerCase();
+    if (/research|study|investigat|find out|compare|analy/.test(s)) return { label: 'RS', color: '#c9a5f0' };
+    if (/scrap|crawl|website|\burl\b|fetch|screenshot/.test(s)) return { label: 'WEB', color: '#61afef' };
+    if (/code|build|implement|\bfix\b|refactor|debug|test|deploy/.test(s)) return { label: 'DEV', color: '#f59e0b' };
+    return { label: 'AG', color: '#2dd4bf' };
+  }
   function cardHTML(a){
     const cancel = a.running ? '<button class="ag-card-cancel" data-cancel="'+a.id+'">Cancel</button>' : '';
     const eng = a.engine.toUpperCase();
-    return '<div class="ag-card '+(AG.selected===a.id?'sel':'')+(a.depth?' child':'')+'" data-sel="'+a.id+'">'
+    const ti = typeInfo(a);
+    const maxCost = (a.budget && a.budget.maxCost) || 0;
+    const pct = maxCost > 0 ? Math.min(100, (a.cost / maxCost) * 100) : 0;
+    const bar = maxCost > 0
+      ? '<div class="ag-costbar" title="'+fmtCost(a.cost)+' of '+fmtCost(maxCost)+' budget"><i class="'+(pct>=100?'over':'')+'" style="width:'+pct.toFixed(1)+'%"></i></div>'
+      : '';
+    return '<div class="ag-card eng-'+a.engine+' '+(AG.selected===a.id?'sel ':'')+(a.running?'running ':'')+(a.depth?'child':'')+'" data-sel="'+a.id+'">'
       + '<div class="ag-card-top"><span class="ag-dot '+a.status+'"></span>'
+      + '<span class="ag-typeicon" style="background:'+ti.color+'" title="'+esc2(a.engine)+'">'+ti.label+'</span>'
       + '<span class="ag-card-name">'+esc2(a.name)+'</span>'+cancel+'</div>'
       + '<div class="ag-card-task">'+esc2(a.task)+'</div>'
       + '<div class="ag-card-meta"><span class="ag-badge '+a.engine+'">'+eng+'</span>'
       + '<span class="ag-card-model">'+esc2(a.liveModel||a.model)+'</span>'
       + '<span class="ag-card-tok">~'+fmtTok(a.tokIn+a.tokOut)+' · '+fmtCost(a.cost)+'</span></div>'
-      + '</div>';
+      + bar + '</div>';
+  }
+  function bucketOf(a){
+    if (a.status === 'waiting') return 'wait';
+    if (a.running) return 'run';
+    if (a.status === 'done') return 'done';
+    return 'other';
   }
   function renderList(){
     const wrap = $('ag-cards'); if (!wrap) return;
     const roots = AG.order.filter(id => { const a = AG.agents.get(id); return a && !a.depth; });
+    const rootWithKids = id => {
+      let h = cardHTML(AG.agents.get(id));
+      AG.order.forEach(cid => { const c = AG.agents.get(cid); if (c && c.parent === id) h += cardHTML(c); });
+      return h;
+    };
+    const groups = [
+      { key: 'run',   label: 'Running',          cls: 'run'  },
+      { key: 'wait',  label: 'Waiting approval',  cls: 'wait' },
+      { key: 'done',  label: 'Done',              cls: ''     },
+      { key: 'other', label: 'Idle / stopped',    cls: ''     }
+    ];
     let html = '';
-    roots.forEach(id => {
-      const a = AG.agents.get(id); if (!a) return;
-      html += cardHTML(a);
-      AG.order.forEach(cid => { const c = AG.agents.get(cid); if (c && c.parent === id) html += cardHTML(c); });
+    groups.forEach(g => {
+      const ids = roots.filter(id => bucketOf(AG.agents.get(id)) === g.key);
+      if (!ids.length) return;
+      html += '<div class="ag-grouph '+g.cls+'">'+g.label+'<span class="c">'+ids.length+'</span></div>';
+      ids.forEach(id => { html += rootWithKids(id); });
     });
     wrap.innerHTML = html;
     $('ag-empty').style.display = AG.agents.size ? 'none' : 'block';
@@ -5787,8 +6244,24 @@ window.kiteMCP = (function(){
       case 'goal':        return '<div class="ag-line goal"><b>❯</b> '+esc2(it.text)+'</div>';
       case 'thinking':    return '<div class="ag-line thinking">Thinking…</div>';
       case 'thinking-done':return '<div class="ag-line thinking">'+esc2(it.text)+'</div>';
-      case 'toolcall':    return '<div class="ag-line toolcall">● Tool: '+esc2(it.name)+' '+esc2(it.args?JSON.stringify(it.args):'')+'</div>';
-      case 'toolresult':  return '<div class="ag-line toolresult">+ '+esc2(it.text)+'</div>';
+      case 'toolcall':    {
+        const info = toolIconInfo(it.name, it.ask);
+        let argStr = ''; try{ argStr = it.args ? JSON.stringify(it.args, null, 2) : ''; }catch(_){ argStr = String(it.args); }
+        const hasArgs = argStr && argStr !== '{}' && argStr !== 'null';
+        return '<details class="ag-tc">'
+          + '<summary><span class="ag-tc-ico '+info.cls+'">'+info.g+'</span><span class="ag-tc-name">'+esc2(it.name)+'</span>'
+          + (hasArgs ? '<span class="ag-tc-chev">▸</span>' : '') + '</summary>'
+          + (hasArgs ? '<pre>'+esc2(argStr)+'</pre>' : '') + '</details>';
+      }
+      case 'toolresult':  {
+        const txt = String(it.text || '');
+        const attr = esc2(txt).replace(/"/g,'&quot;');
+        const col = it.err ? 'color:var(--coral,#ff6b6b)' : '';
+        return '<div class="ag-line toolresult" style="display:flex;align-items:flex-start;gap:7px;'+col+'">'
+          + '<span style="flex:none">'+(it.err?'✗':'+')+'</span>'
+          + '<span style="flex:1;min-width:0;white-space:pre-wrap;word-break:break-word">'+esc2(txt)+'</span>'
+          + '<button class="ag-copy" data-copy="'+attr+'" onclick="window.__agCopy&&window.__agCopy(this)">copy</button></div>';
+      }
       case 'msg':         return '<div class="ag-line msg">→ you: '+esc2(it.text)+'</div>';
       case 'info':        return '<div class="ag-line info">'+esc2(it.text)+'</div>';
       case 'coord-plan': {
@@ -5803,7 +6276,32 @@ window.kiteMCP = (function(){
              + '<div style="font-family:var(--mono);font-size:9.5px;letter-spacing:.5px;color:var(--teal,#2dd4bf);text-transform:uppercase;margin-bottom:5px">⚙ Coordinator · '+done+'/'+(it.workers||[]).length+' workers complete</div>'
              + rows + '</div>';
       }
-      case 'done':        return '<div class="ag-line done">✓ '+esc2(it.text)+'</div>';
+      case 'image':       return '<div class="ag-line" style="margin:7px 0">'
+                               + '<div style="font-family:var(--mono);font-size:9.5px;letter-spacing:.5px;color:var(--teal,#2dd4bf);text-transform:uppercase;margin-bottom:5px">Screenshot'+(it.caption?' · '+esc2(it.caption):'')+'</div>'
+                               + '<img src="'+esc2(it.src)+'" alt="screenshot" style="max-width:100%;border:1px solid var(--border);border-radius:8px;display:block;cursor:zoom-in" onclick="window.open(this.src,\'_blank\')"></div>';
+      case 'code': {
+        const label = esc2(it.lang || 'code');
+        const attrCode = esc2(it.code).replace(/"/g,'&quot;');
+        return '<div class="ag-line" style="margin:7px 0">'
+             + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span style="font-family:var(--mono);font-size:9.5px;letter-spacing:.5px;color:#c9a5f0;text-transform:uppercase">‹/› '+label+'</span>'
+             + '<button onclick="(function(b){try{navigator.clipboard.writeText(b.getAttribute(\'data-code\'));b.textContent=\'copied ✓\';setTimeout(function(){b.textContent=\'copy\'},1200);}catch(e){}})(this)" data-code="'+attrCode+'" style="margin-left:auto;font-family:var(--mono);font-size:9.5px;color:var(--t3);background:none;border:1px solid var(--border);border-radius:5px;padding:2px 7px;cursor:pointer">copy</button></div>'
+             + '<pre style="margin:0;background:var(--surface,#12121a);border:1px solid var(--border);border-radius:8px;padding:10px 12px;overflow:auto;max-height:300px"><code style="font-family:var(--mono);font-size:12px;line-height:1.5;color:var(--t1);white-space:pre">'+esc2(it.code)+'</code></pre></div>';
+      }
+      case 'artifact': {
+        const href = 'data:text/plain;charset=utf-8,'+encodeURIComponent(it.content||'');
+        const kb = it.size>1024 ? (it.size/1024).toFixed(1)+' KB' : (it.size||0)+' B';
+        const icon = it.atype==='code'?'‹/›':it.atype==='data'?'▤':'▦';
+        const safeName = esc2(String(it.name||'artifact').replace(/["<>]/g,''));
+        return '<div class="ag-line" style="display:flex;align-items:center;gap:10px;border:1px solid var(--border);border-radius:8px;padding:8px 11px;margin:7px 0">'
+             + '<span style="font-size:16px;flex:none">'+icon+'</span>'
+             + '<div style="flex:1;min-width:0"><div style="color:var(--t1);font-weight:600;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc2(it.name)+'</div>'
+             + '<div style="color:var(--t3);font-size:10.5px;font-family:var(--mono)">'+esc2(it.atype||'text')+' · '+kb+'</div></div>'
+             + '<a href="'+href+'" download="'+safeName+'" style="flex:none;color:var(--teal,#2dd4bf);text-decoration:none;font-size:11px;font-family:var(--mono);border:1px solid var(--teal-border,rgba(45,212,191,.35));border-radius:6px;padding:4px 10px">Download</a></div>';
+      }
+      case 'done': {
+        const md = (typeof chatMarkdown === 'function') ? chatMarkdown(String(it.text||'')) : esc2(it.text);
+        return '<div class="ag-line done"><div style="display:flex;gap:7px;align-items:flex-start"><span style="color:var(--teal,#2dd4bf);flex:none">✓</span><div class="ag-md" style="flex:1;min-width:0;overflow:auto">'+md+'</div></div></div>';
+      }
       case 'error':       return '<div class="ag-line error">'+esc2(it.text)+'</div>';
       case 'approval': {
         const q = it.tool==='file_write' ? 'Allow file write?'
@@ -5817,12 +6315,163 @@ window.kiteMCP = (function(){
       default:            return '';
     }
   }
+  window.__agCopy = function(btn){
+    try{
+      const el = document.createElement('textarea');
+      el.innerHTML = btn.getAttribute('data-copy') || '';
+      navigator.clipboard.writeText(el.value);
+      const o = btn.textContent; btn.textContent = 'copied ✓';
+      setTimeout(() => { btn.textContent = o; }, 1100);
+    }catch(_){ }
+  };
   function renderStream(a){
     const el = $('ag-stream'); if (!el) return;
-    el.innerHTML = a.activity.map(lineHTML).join('');
+    el.innerHTML = a.activity.map(it => {
+      const inner = lineHTML(it); if (!inner) return '';
+      return '<div class="ag-row"><span class="ag-ts">'+fmtTs(it.ts)+'</span>'+inner+'</div>';
+    }).join('');
     el.scrollTop = el.scrollHeight;
-    const tk = $('ag-d-ticker'); if (tk) tk.textContent = '~' + fmtTok(a.tokIn+a.tokOut) + ' tok · ' + fmtCost(a.cost);
+    const tk = $('ag-d-ticker');
+    if (tk){
+      const tot = a.tokIn + a.tokOut;
+      let s = '~' + fmtTok(tot) + ' tok · ' + fmtCost(a.cost);
+      if (a.startedAt){
+        const secs = Math.max(0.1, ((a.endedAt || Date.now()) - a.startedAt) / 1000);
+        s += ' · ' + (secs < 60 ? secs.toFixed(1) + 's' : Math.round(secs/60) + 'm');
+        if (tot > 0) s += ' · ' + Math.round(tot/secs) + ' tok/s';
+      }
+      tk.textContent = s;
+    }
+    renderArtifacts(a);
   }
+  let _artOpen = true;
+  function renderArtifacts(a){
+    const host = $('ag-artifacts'); if (!host) return;
+    const arts = a.artifacts || [];
+    if (!arts.length){ host.style.display = 'none'; host.innerHTML = ''; return; }
+    host.style.display = 'block';
+    const head = '<div onclick="window.__agArtToggle&&window.__agArtToggle()" style="display:flex;align-items:center;gap:7px;cursor:pointer;font-family:var(--mono);font-size:9.5px;letter-spacing:.5px;text-transform:uppercase;color:var(--teal,#2dd4bf);padding:8px 2px 6px">'
+      + '<span style="transition:transform .15s;display:inline-block;'+(_artOpen?'':'transform:rotate(-90deg)')+'">▾</span>Artifacts · ' + arts.length + '</div>';
+    let list = '';
+    if (_artOpen){
+      list = '<div style="display:flex;flex-direction:column;gap:7px;padding-bottom:6px">' + arts.map((art, i) => {
+        if (art.kind === 'image'){
+          return '<div style="display:flex;align-items:center;gap:10px;border:1px solid var(--border);border-radius:8px;padding:7px 10px">'
+            + '<img src="'+esc2(art.src)+'" style="width:40px;height:30px;object-fit:cover;border-radius:4px;border:1px solid var(--border);cursor:zoom-in" onclick="window.open(this.src,\'_blank\')">'
+            + '<div style="flex:1;min-width:0"><div style="font-size:12px;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc2(art.name)+'</div><div style="font-family:var(--mono);font-size:10px;color:var(--t3)">image</div></div>'
+            + '<a href="'+esc2(art.src)+'" download="screenshot-'+(i+1)+'.png" style="flex:none;color:var(--teal,#2dd4bf);text-decoration:none;font-size:11px;font-family:var(--mono);border:1px solid var(--border);border-radius:6px;padding:3px 9px">Download</a></div>';
+        }
+        const href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(art.content || '');
+        const kb = art.size > 1024 ? (art.size/1024).toFixed(1) + ' KB' : (art.size||0) + ' B';
+        const ico = art.type === 'code' ? '‹/›' : '▤';
+        return '<div style="display:flex;align-items:center;gap:10px;border:1px solid var(--border);border-radius:8px;padding:7px 10px">'
+          + '<span style="flex:none;font-family:var(--mono);color:var(--t2)">'+ico+'</span>'
+          + '<div style="flex:1;min-width:0"><div style="font-size:12px;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc2(art.name)+'</div><div style="font-family:var(--mono);font-size:10px;color:var(--t3)">'+esc2(art.type||'text')+' · '+kb+'</div></div>'
+          + '<a href="'+href+'" download="'+esc2(String(art.name).replace(/["<>]/g,''))+'" style="flex:none;color:var(--teal,#2dd4bf);text-decoration:none;font-size:11px;font-family:var(--mono);border:1px solid var(--border);border-radius:6px;padding:3px 9px">Download</a></div>';
+      }).join('') + '</div>';
+    }
+    host.innerHTML = head + list;
+  }
+  window.__agArtToggle = function(){ _artOpen = !_artOpen; const a = AG.agents.get(AG.selected); if (a) renderArtifacts(a); };
+
+  /* ── detail panel tabs: Activity | Files | Memory | Config ── */
+  function updateDTabCounts(a){
+    const fn = $('ag-dtab-files-n'); if (fn){ const n = (a.artifacts||[]).length; fn.textContent = n ? '·'+n : ''; }
+    const mn = $('ag-dtab-memory-n'); if (mn){ mn.textContent = a.memRecalled ? '·1' : ''; }
+  }
+  function renderFilesPane(a){
+    const host = $('ag-pane-files'); if (!host) return;
+    const arts = a.artifacts || [];
+    if (!arts.length){ host.innerHTML = '<div class="ag-dpane-empty">No files yet. Artifacts, screenshots and code this agent produces appear here.</div>'; return; }
+    host.innerHTML = '<div style="display:flex;flex-direction:column;gap:8px;padding:12px 14px">' + arts.map((art, i) => {
+      if (art.kind === 'image'){
+        return '<div style="display:flex;align-items:center;gap:10px;border:1px solid var(--border);border-radius:8px;padding:8px 11px">'
+          + '<img src="'+esc2(art.src)+'" style="width:56px;height:40px;object-fit:cover;border-radius:5px;border:1px solid var(--border);cursor:zoom-in" onclick="window.open(this.src,\'_blank\')">'
+          + '<div style="flex:1;min-width:0"><div style="font-size:12.5px;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc2(art.name)+'</div><div style="font-family:var(--mono);font-size:10px;color:var(--t3)">image</div></div>'
+          + '<a href="'+esc2(art.src)+'" download="screenshot-'+(i+1)+'.png" style="flex:none;color:var(--teal,#2dd4bf);text-decoration:none;font-size:11px;font-family:var(--mono);border:1px solid var(--border);border-radius:6px;padding:4px 10px">Download</a></div>';
+      }
+      const href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(art.content || '');
+      const kb = art.size > 1024 ? (art.size/1024).toFixed(1) + ' KB' : (art.size||0) + ' B';
+      const ico = art.type === 'code' ? '‹/›' : art.type === 'data' ? '▤' : '▦';
+      const preview = String(art.content || '').slice(0, 160);
+      return '<div style="border:1px solid var(--border);border-radius:8px;padding:9px 11px">'
+        + '<div style="display:flex;align-items:center;gap:10px"><span style="flex:none;font-family:var(--mono);color:var(--t2)">'+ico+'</span>'
+        + '<div style="flex:1;min-width:0"><div style="font-size:12.5px;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc2(art.name)+'</div><div style="font-family:var(--mono);font-size:10px;color:var(--t3)">'+esc2(art.type||'text')+' · '+kb+'</div></div>'
+        + '<a href="'+href+'" download="'+esc2(String(art.name).replace(/["<>]/g,''))+'" style="flex:none;color:var(--teal,#2dd4bf);text-decoration:none;font-size:11px;font-family:var(--mono);border:1px solid var(--border);border-radius:6px;padding:4px 10px">Download</a></div>'
+        + (preview ? '<div style="margin-top:7px;font-family:var(--mono);font-size:10.5px;color:var(--t3);white-space:pre-wrap;word-break:break-word;max-height:64px;overflow:hidden">'+esc2(preview)+(art.content&&art.content.length>160?'…':'')+'</div>' : '')
+        + '</div>';
+    }).join('') + '</div>';
+  }
+  function renderMemoryPane(a){
+    const host = $('ag-pane-memory'); if (!host) return;
+    const hasMem = !!(window.kiteMemory);
+    let html = '<div style="padding:12px 14px">';
+    html += '<div style="display:flex;gap:7px;margin-bottom:12px">'
+      + '<input id="ag-mem-q" placeholder="Search agent memory…" style="flex:1;background:var(--bg,#0b0b10);border:1px solid var(--border,#26262c);border-radius:7px;color:var(--t1);font-size:12px;padding:7px 10px;outline:none">'
+      + '<button class="ag-copy" style="padding:6px 12px" onclick="window.__agMemSearch&&window.__agMemSearch()">Search</button></div>';
+    html += '<div id="ag-mem-results">';
+    if (a.memRecalled){
+      html += '<div style="font-family:var(--mono);font-size:9.5px;letter-spacing:.5px;text-transform:uppercase;color:var(--teal,#2dd4bf);margin-bottom:6px">Recalled for this task</div>'
+        + '<div style="border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--t2);white-space:pre-wrap;word-break:break-word;max-height:260px;overflow:auto">'+esc2(a.memRecalled)+'</div>';
+    } else {
+      html += '<div class="ag-dpane-empty">'+(hasMem ? 'No memory recalled for this task. Search the knowledge graph above.' : 'Memory MCP not enabled. Turn on the Memory server in the MCP tab and enable Agent memory when creating an agent.')+'</div>';
+    }
+    html += '</div></div>';
+    host.innerHTML = html;
+  }
+  window.__agMemSearch = async function(){
+    const q = ($('ag-mem-q')||{}).value; const out = $('ag-mem-results'); if (!out) return;
+    if (!q || !window.kiteMemory){ return; }
+    out.innerHTML = '<div class="ag-dpane-empty">Searching…</div>';
+    try{ const r = await window.kiteMemory.recall(q);
+      out.innerHTML = r ? '<div style="border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--t2);white-space:pre-wrap;word-break:break-word;max-height:320px;overflow:auto">'+esc2(r)+'</div>'
+                        : '<div class="ag-dpane-empty">No matching memories.</div>';
+    }catch(e){ out.innerHTML = '<div class="ag-dpane-empty">Memory search failed: '+esc2((e&&e.message)||String(e))+'</div>'; }
+  };
+  function renderConfigPane(a){
+    const host = $('ag-pane-config'); if (!host) return;
+    const tools = Object.keys(a.tools||{}).filter(k => a.tools[k]);
+    const row = (k, v) => '<div class="ag-cfg-row"><span class="k">'+esc2(k)+'</span><span class="v">'+esc2(v)+'</span></div>';
+    let html = '<div style="padding:12px 14px">';
+    html += row('Task', a.task || '—');
+    html += row('Engine', a.engine || '—');
+    html += row('Model', a.liveModel || a.model || 'auto');
+    html += row('Working dir', a.cwd || '(none)');
+    html += row('Tools', tools.length ? tools.join(', ') : 'none');
+    html += row('Memory', a.memory ? 'on' : 'off');
+    html += row('Budget', '~' + fmtTok((a.budget&&a.budget.maxTokens)||0) + ' tok · ' + fmtCost((a.budget&&a.budget.maxCost)||0));
+    html += row('Spent', '~' + fmtTok(a.tokIn+a.tokOut) + ' tok · ' + fmtCost(a.cost) + ' · ' + (a.iter||0) + ' iterations');
+    if (a.engine === 'coordinator' && a.coord) html += row('Workers', (a.coord.maxWorkers||'?') + ' · ' + (a.coord.workerModel||'auto'));
+    html += '<div style="margin-top:14px;display:flex;gap:8px">';
+    if (!a.running) html += '<button class="ag-start-btn" style="padding:8px 16px" onclick="window.__agRerun&&window.__agRerun(\''+a.id+'\')">Re-run agent</button>';
+    html += '</div></div>';
+    host.innerHTML = html;
+  }
+  window.__agRerun = function(id){
+    const a = AG.agents.get(id); if (!a) return;
+    if (runningCount() >= MAX_AGENTS){ return; }
+    const clone = createAgent({
+      name: a.name, task: a.task, engine: a.engine, model: a.model, cwd: a.cwd,
+      memory: a.memory, tools: Object.assign({}, a.tools),
+      budget: Object.assign({}, a.budget), coord: a.coord ? Object.assign({}, a.coord) : undefined
+    });
+    selectAgent(clone.id); runAgent(clone);
+  };
+  function switchDTab(name){
+    AG.dtab = name;
+    document.querySelectorAll('#ag-dtabs .ag-dtab').forEach(b => b.classList.toggle('on', b.dataset.dtab === name));
+    const a = AG.agents.get(AG.selected);
+    const isAct = name === 'activity';
+    const stream = $('ag-stream'); if (stream) stream.style.display = isAct ? 'block' : 'none';
+    const arts = $('ag-artifacts'); if (arts) arts.style.display = (isAct && a && (a.artifacts||[]).length) ? 'block' : 'none';
+    ['files','memory','config'].forEach(p => { const el = $('ag-pane-'+p); if (el) el.style.display = (name === p) ? 'block' : 'none'; });
+    if (!a) return;
+    if (name === 'files') renderFilesPane(a);
+    else if (name === 'memory') renderMemoryPane(a);
+    else if (name === 'config') renderConfigPane(a);
+    else renderStream(a);
+  }
+
   function renderDetail(a){
     $('ag-detail-empty').style.display = 'none';
     $('ag-detail-body').style.display = 'flex';
@@ -5830,11 +6479,13 @@ window.kiteMCP = (function(){
     $('ag-d-name').textContent = a.name;
     $('ag-d-status').textContent = a.status;
     $('ag-d-cancel').style.display = a.running ? 'block' : 'none';
-    renderStream(a);
+    updateDTabCounts(a);
+    switchDTab(AG.dtab || 'activity');
   }
   function selectAgent(id){
     AG.selected = id;
     const a = AG.agents.get(id); if (!a) return;
+    AG.dtab = 'activity';
     renderList(); renderDetail(a);
   }
 
@@ -5887,7 +6538,10 @@ window.kiteMCP = (function(){
       read:  $('ag-t-read').checked,
       write: $('ag-t-write').checked,
       shell: $('ag-t-shell').checked,
-      spawn: $('ag-t-spawn').checked
+      spawn: $('ag-t-spawn').checked,
+      browser:  $('ag-t-browser') ? $('ag-t-browser').checked : false,
+      code:     $('ag-t-code') ? $('ag-t-code').checked : false,
+      artifact: $('ag-t-artifact') ? $('ag-t-artifact').checked : false
     };
     // external Connections / MCP tools selected in the grouped checkboxes
     document.querySelectorAll('#ag-ext-tools .ag-ext-cb:checked').forEach(cb => { toolFlags[cb.dataset.tool] = true; });
@@ -5896,6 +6550,7 @@ window.kiteMCP = (function(){
       name, task, engine,
       model: $('ag-f-model').value,
       cwd: $('ag-f-cwd').value.trim(),
+      memory: $('ag-t-memory') ? $('ag-t-memory').checked : false,
       tools: toolFlags,
       budget: {
         maxTokens: parseInt($('ag-f-maxtok').value, 10) || 40000,
@@ -5956,6 +6611,9 @@ window.kiteMCP = (function(){
       AG.booted = true;
       $('ag-new-btn').addEventListener('click', openModal);
       $('ag-modal-x').addEventListener('click', closeModal);
+      // detail panel tab bar
+      const dtabs = $('ag-dtabs');
+      if (dtabs) dtabs.addEventListener('click', e => { const b = e.target.closest('[data-dtab]'); if (b) switchDTab(b.dataset.dtab); });
       $('ag-modal').addEventListener('click', e => { if (e.target === $('ag-modal')) closeModal(); });
       $('ag-f-engine').addEventListener('change', syncModelSelect);
       $('ag-start-btn').addEventListener('click', startFromForm);
@@ -5982,6 +6640,16 @@ window.kiteMCP = (function(){
       const ws = $('ag-f-workers');
       if (ws) ws.addEventListener('input', () => { const v = $('ag-f-workers-val'); if (v) v.textContent = ws.value; });
       renderList(); updateBadge();
+    },
+
+    // Lightweight snapshot of all agent runs — used by Projects to bundle a session.
+    snapshot(){
+      const out = [];
+      AG.order.forEach(id => { const a = AG.agents.get(id); if (a) out.push({
+        name: a.name, task: a.task, status: a.status, engine: a.engine,
+        result: String(a.result || '').slice(0, 4000), depth: a.depth || 0
+      }); });
+      return out;
     },
 
     /* ── voice control surface ── */
@@ -6092,6 +6760,21 @@ window.kiteMCP = (function(){
       return s.trim();
     },
 
+    // Live status of an agent by id — used by Projects to track launched slots.
+    agentInfo(id){
+      const a = AG.agents.get(id); if (!a) return null;
+      return { status: a.status, running: !!a.running, cost: a.cost || 0,
+               tok: (a.tokIn||0)+(a.tokOut||0), result: String(a.result||'') };
+    },
+    // Launch a pre-configured project agent slot. Returns the agent (or null).
+    launchSlot(cfg){
+      cfg = cfg || {};
+      if (!cfg.task) return null;
+      if (cfg.engine === 'coordinator') return this.runCoordinator(cfg.task, { name: cfg.name, model: cfg.model, tools: cfg.tools });
+      return this.startQuick(cfg.task, { name: cfg.name, engine: cfg.engine, model: cfg.model, tools: cfg.tools });
+    },
+    focusAgent(id){ if (!AG.agents.get(id)) return false; if (typeof switchTab === 'function') switchTab(9); selectAgent(id); return true; },
+
     // exposed for tests / integration
     _AG: AG, _create: createAgent, _run: runAgent, _cancel: cancelAgent
   };
@@ -6099,500 +6782,229 @@ window.kiteMCP = (function(){
 })();
 </script>
 
-<!-- ═══════════ Real Terminal (xterm.js + ConPTY): tabs + split panes ═══════════ -->
+<!-- Tauri event bridge (kiteListen) -->
 <script type="module">
-  import { Terminal } from '@xterm/xterm';
-  import { FitAddon } from '@xterm/addon-fit';
-  import '@xterm/xterm/css/xterm.css';
-  import { invoke } from '@tauri-apps/api/core';
+  // Terminal tab was removed. MCP, the agent engine and global drag-drop still
+  // need Tauri's event listener, which the terminal module used to publish.
   import { listen } from '@tauri-apps/api/event';
-
-  const $ = id => document.getElementById(id);
-  const MAX_PANES = 4;
-  const THEME = {
-    background: '#0a0a0a', foreground: '#e6e6e6',
-    cursor: '#2dd4bf', cursorAccent: '#0a0a0a',
-    selectionBackground: 'rgba(45,212,191,0.30)',
-    black: '#0a0a0a', red: '#ff6b6b', green: '#2dd4bf', yellow: '#e6c07b',
-    blue: '#61afef', magenta: '#a78bfa', cyan: '#56b6c2', white: '#d0d0d0',
-    brightBlack: '#5a5a5a', brightRed: '#ff8787', brightGreen: '#5eead4',
-    brightYellow: '#ffd98a', brightBlue: '#8ac6ff', brightMagenta: '#c4b5fd',
-    brightCyan: '#7fd3de', brightWhite: '#ffffff'
-  };
-
-  let ready = false, tabs = [], active = null, ctxPane = null;
-  let shells = [{ id: 'powershell', label: 'PowerShell', cmd: 'powershell.exe', args: [] }];
-  const bySession = new Map();   // PTY session id -> pane
-
-  function b64ToBytes(b64){
-    const bin = atob(b64);
-    const out = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
-    return out;
-  }
-
-  /* ── layout tree: leaf = {pane}, split = {dir:'row'|'col', a, b} ── */
-  const leaves = n => n.pane ? [n] : [...leaves(n.a), ...leaves(n.b)];
-  const paneCount = tab => leaves(tab.root).length;
-
-  function replaceLeaf(tab, target, node){
-    const rec = n => {
-      if (n.pane === target) return node;
-      if (n.dir){ n.a = rec(n.a); n.b = rec(n.b); }
-      return n;
-    };
-    tab.root = rec(tab.root);
-  }
-  function removeLeaf(tab, pane){
-    const rec = n => {
-      if (n.pane) return n;
-      if (n.a.pane === pane) return rec(n.b);
-      if (n.b.pane === pane) return rec(n.a);
-      n.a = rec(n.a); n.b = rec(n.b); return n;
-    };
-    tab.root = rec(tab.root);
-  }
-
-  function safeFit(pane){
-    try {
-      if (pane.host.isConnected && pane.host.offsetWidth > 20 && pane.host.offsetHeight > 20)
-        pane.fit.fit();
-    } catch(_){}
-  }
-  const fitAll = tab => leaves(tab.root).forEach(l => safeFit(l.pane));
-
-  /* ── chrome (toolbar shell label + status bar) ── */
-  function updateChrome(){
-    const pane = active && active.focused;
-    const lbl = $('term-shell-label');
-    if (lbl) lbl.textContent = pane ? pane.shell.label : '—';
-    const st = $('term-status');
-    if (st){
-      const dead = !pane || pane.dead;
-      st.textContent = dead ? '● exited' : '● live';
-      st.classList.toggle('dead', dead);
-    }
-  }
-  function flashStatus(msg){
-    const st = $('term-status');
-    if (!st) return;
-    st.textContent = '● ' + msg;
-    st.classList.add('dead');
-    setTimeout(updateChrome, 1600);
-  }
-
-  /* ── panes ── */
-  function makePane(tab, shell){
-    const pane = { tab, shell, sid: null, dead: false };
-    pane.el = document.createElement('div');
-    pane.el.className = 'term-pane';
-    pane.host = document.createElement('div');
-    pane.host.className = 'term-pane-host';
-    pane.el.appendChild(pane.host);
-
-    pane.term = new Terminal({
-      fontFamily: "'Cascadia Code','Cascadia Mono',Consolas,'Courier New',ui-monospace,monospace",
-      fontSize: 14,
-      lineHeight: 1.2,
-      cursorBlink: true,
-      allowProposedApi: true,
-      theme: THEME
-    });
-    pane.fit = new FitAddon();
-    pane.term.loadAddon(pane.fit);
-    pane.term.open(pane.host);
-
-    pane.term.onData(d => { if (pane.sid != null && !pane.dead) invoke('term_write', { id: pane.sid, data: d }); });
-    pane.term.onResize(({ rows, cols }) => { if (pane.sid != null && !pane.dead) invoke('term_resize', { id: pane.sid, rows, cols }); });
-
-    // Ctrl+Shift+T / W inside xterm (it swallows keys otherwise).
-    pane.term.attachCustomKeyEventHandler(ev => {
-      if (ev.type === 'keydown' && ev.ctrlKey && ev.shiftKey && !ev.altKey){
-        const k = ev.key.toLowerCase();
-        if (k === 't'){ ev.preventDefault(); newTab(); return false; }
-        if (k === 'w'){ ev.preventDefault(); closeTab(pane.tab); return false; }
-      }
-      return true;
-    });
-
-    pane.el.addEventListener('pointerdown', () => focusPane(pane));
-    pane.el.addEventListener('contextmenu', e => {
-      e.preventDefault();
-      focusPane(pane);
-      showCtxMenu(e.clientX, e.clientY, pane);
-    });
-    new ResizeObserver(() => safeFit(pane)).observe(pane.host);
-    return pane;
-  }
-
-  /* ── display-only pane (no PTY) — used to mirror agent shell output live ── */
-  function makeDisplayPane(tab, name){
-    const pane = { tab, shell: { label: name }, sid: null, dead: false, display: true };
-    pane.el = document.createElement('div');
-    pane.el.className = 'term-pane';
-    pane.host = document.createElement('div');
-    pane.host.className = 'term-pane-host';
-    pane.el.appendChild(pane.host);
-    pane.term = new Terminal({
-      fontFamily: "'Cascadia Code','Cascadia Mono',Consolas,'Courier New',ui-monospace,monospace",
-      fontSize: 14, lineHeight: 1.2, cursorBlink: false, disableStdin: true,
-      allowProposedApi: true, theme: THEME
-    });
-    pane.fit = new FitAddon();
-    pane.term.loadAddon(pane.fit);
-    pane.term.open(pane.host);
-    pane.el.addEventListener('pointerdown', () => focusPane(pane));
-    new ResizeObserver(() => safeFit(pane)).observe(pane.host);
-    return pane;
-  }
-
-  /* Open (or reuse) a display tab named after an agent; returns a writer handle. */
-  async function openAgentView(name){
-    if (!ready) await kiteTerm.init();
-    let tab = tabs.find(t => t.agentName === name);
-    if (!tab){
-      tab = { shell: { label: name + ' ·agent' }, el: document.createElement('div'), root: null, focused: null, agentName: name };
-      tab.el.className = 'term-tabpage';
-      $('term-workspace').appendChild(tab.el);
-      tabs.push(tab);
-      const pane = makeDisplayPane(tab, name);
-      tab.root = { pane };
-      tab.focused = pane;
-      tab.viewPane = pane;
-      selectTab(tab);
-      renderLayout(tab);
-      requestAnimationFrame(() => safeFit(pane));
-      pane.term.writeln('\x1b[38;5;80m● agent terminal — ' + name + '\x1b[0m');
-    }
-    const pane = tab.viewPane;
-    return {
-      write: s => { try { pane.term.write(s); } catch(_){} },
-      clear: () => { try { pane.term.clear(); } catch(_){} },
-      focus: () => { try { selectTab(tab); } catch(_){} }
-    };
-  }
-
-  async function openPane(pane){
-    await new Promise(r => requestAnimationFrame(r));   // let layout settle so fit() is real
-    safeFit(pane);
-    try {
-      const sid = await invoke('term_open', {
-        rows: pane.term.rows || 24, cols: pane.term.cols || 80,
-        shell: pane.shell.cmd, args: pane.shell.args
-      });
-      pane.sid = sid;
-      bySession.set(sid, pane);
-    } catch(e){
-      pane.dead = true;
-      pane.term.write('\x1b[38;5;209m[failed to start ' + pane.shell.label + ': ' + e + ']\x1b[0m\r\n');
-    }
-    updateChrome();
-  }
-
-  function destroyPane(pane){
-    if (pane.sid != null){
-      bySession.delete(pane.sid);
-      invoke('term_close', { id: pane.sid }).catch(() => {});
-    }
-    try { pane.term.dispose(); } catch(_){}
-    pane.el.remove();
-  }
-
-  function focusPane(pane){
-    const tab = pane.tab;
-    tab.focused = pane;
-    if (tab !== active) return;
-    tab.el.querySelectorAll('.term-pane').forEach(e => e.classList.remove('focused'));
-    pane.el.classList.add('focused');
-    pane.term.focus();
-    updateChrome();
-  }
-
-  /* ── layout render ── */
-  function build(node){
-    if (node.pane) return node.pane.el;
-    const d = document.createElement('div');
-    d.className = 'term-split ' + (node.dir === 'row' ? 'term-split-row' : 'term-split-col');
-    d.appendChild(build(node.a));
-    d.appendChild(build(node.b));
-    return d;
-  }
-  function renderLayout(tab){
-    tab.el.replaceChildren(build(tab.root));
-    requestAnimationFrame(() => fitAll(tab));
-  }
-
-  async function split(dir){
-    const tab = active;
-    if (!tab || !tab.focused) return;
-    if (paneCount(tab) >= MAX_PANES){ flashStatus('max ' + MAX_PANES + ' panes'); return; }
-    const target = tab.focused;
-    const pane = makePane(tab, target.shell);
-    replaceLeaf(tab, target, { dir, a: { pane: target }, b: { pane } });
-    renderLayout(tab);
-    await openPane(pane);
-    focusPane(pane);
-  }
-
-  function closePane(pane){
-    const tab = pane.tab;
-    if (paneCount(tab) <= 1){ closeTab(tab); return; }
-    removeLeaf(tab, pane);
-    destroyPane(pane);
-    renderLayout(tab);
-    focusPane(leaves(tab.root)[0].pane);
-  }
-
-  /* ── tabs ── */
-  function renderTabbar(){
-    const bar = $('term-tabs');
-    bar.replaceChildren();
-    tabs.forEach(tab => {
-      const b = document.createElement('button');
-      b.className = 'term-tab' + (tab === active ? ' active' : '');
-      const s = document.createElement('span');
-      s.textContent = tab.shell.label;
-      b.appendChild(s);
-      const x = document.createElement('span');
-      x.className = 'term-tab-x';
-      x.textContent = '×';
-      x.title = 'Close tab (Ctrl+Shift+W)';
-      x.addEventListener('click', e => { e.stopPropagation(); closeTab(tab); });
-      b.appendChild(x);
-      b.addEventListener('click', () => selectTab(tab));
-      bar.appendChild(b);
-    });
-  }
-
-  function selectTab(tab){
-    active = tab;
-    tabs.forEach(t => { t.el.style.display = t === tab ? 'flex' : 'none'; });
-    renderTabbar();
-    updateChrome();
-    requestAnimationFrame(() => {
-      fitAll(tab);
-      if (tab.focused) focusPane(tab.focused);
-    });
-  }
-
-  async function newTab(shell){
-    shell = shell || shells[0];
-    const tab = { shell, el: document.createElement('div'), root: null, focused: null };
-    tab.el.className = 'term-tabpage';
-    $('term-workspace').appendChild(tab.el);
-    tabs.push(tab);
-    const pane = makePane(tab, shell);
-    tab.root = { pane };
-    tab.focused = pane;
-    selectTab(tab);
-    renderLayout(tab);
-    await openPane(pane);
-    focusPane(pane);
-  }
-
-  function closeTab(tab){
-    leaves(tab.root).forEach(l => destroyPane(l.pane));
-    tab.el.remove();
-    const i = tabs.indexOf(tab);
-    if (i >= 0) tabs.splice(i, 1);
-    if (tab === active) active = null;
-    if (!tabs.length){ newTab(); return; }   // always keep one live tab
-    selectTab(tabs[Math.min(i, tabs.length - 1)]);
-  }
-
-  /* ── menus ── */
-  function showCtxMenu(x, y, pane){
-    ctxPane = pane;
-    const m = $('term-ctx');
-    m.classList.add('open');
-    m.style.left = Math.min(x, innerWidth - 200) + 'px';
-    m.style.top = Math.min(y, innerHeight - 260) + 'px';
-  }
-  function buildShellMenu(){
-    const m = $('term-newtab-menu');
-    m.replaceChildren();
-    shells.forEach(s => {
-      const it = document.createElement('div');
-      it.className = 'term-menu-item';
-      it.textContent = s.label;
-      it.addEventListener('click', () => { m.classList.remove('open'); newTab(s); });
-      m.appendChild(it);
-    });
-  }
-
-  /* ── one-time wiring ── */
-  function wire(){
-    $('term-tab-plus').addEventListener('click', () => newTab());
-    $('term-btn-newtab').addEventListener('click', () => newTab());
-    $('term-newtab-dd').addEventListener('click', e => {
-      const m = $('term-newtab-menu');
-      const r = e.currentTarget.getBoundingClientRect();
-      m.style.left = r.left + 'px';
-      m.style.top = (r.bottom + 4) + 'px';
-      m.classList.toggle('open');
-    });
-    $('term-btn-split-r').addEventListener('click', () => split('row'));
-    $('term-btn-split-d').addEventListener('click', () => split('col'));
-    $('term-btn-clear').addEventListener('click', () => { if (active && active.focused) active.focused.term.clear(); });
-
-    // context-menu actions
-    $('term-ctx').addEventListener('click', async e => {
-      const item = e.target.closest('[data-act]');
-      if (!item || !ctxPane) return;
-      $('term-ctx').classList.remove('open');
-      const p = ctxPane;
-      const act = item.dataset.act;
-      if (act === 'copy'){
-        const s = p.term.getSelection();
-        if (s) try { await navigator.clipboard.writeText(s); } catch(_){}
-      } else if (act === 'paste'){
-        try { const t = await navigator.clipboard.readText(); if (t) p.term.paste(t); } catch(_){}
-      } else if (act === 'clear'){
-        p.term.clear();
-      } else if (act === 'split-r'){
-        split('row');
-      } else if (act === 'split-d'){
-        split('col');
-      } else if (act === 'close'){
-        closePane(p);
-      }
-    });
-
-    // click-away closes menus (pointerdown so it beats the button's click)
-    document.addEventListener('pointerdown', e => {
-      if (!e.target.closest('#term-ctx')) $('term-ctx').classList.remove('open');
-      if (!e.target.closest('#term-newtab-menu') && !e.target.closest('#term-newtab-dd'))
-        $('term-newtab-menu').classList.remove('open');
-    });
-    document.addEventListener('keydown', e => {
-      if (e.key === 'Escape'){
-        $('term-ctx').classList.remove('open');
-        $('term-newtab-menu').classList.remove('open');
-      }
-      // Ctrl+Shift+T/W when focus is outside a pane (inside, xterm's handler covers it)
-      if (!ready || !$('tab-8').classList.contains('active')) return;
-      if (e.target.closest && e.target.closest('.term-pane')) return;
-      if (e.ctrlKey && e.shiftKey && !e.altKey){
-        const k = e.key.toLowerCase();
-        if (k === 't'){ e.preventDefault(); newTab(); }
-        else if (k === 'w'){ e.preventDefault(); if (active) closeTab(active); }
-      }
-    });
-    window.addEventListener('resize', () => { if (active) fitAll(active); });
-  }
-
-  /* ── public API ── */
-  const kiteTerm = {
-    async init(){
-      if (ready){
-        if (active) requestAnimationFrame(() => {
-          fitAll(active);
-          if (active.focused) focusPane(active.focused);
-        });
-        return;
-      }
-      ready = true;
-
-      try {
-        const s = await invoke('term_shells');
-        if (Array.isArray(s) && s.length) shells = s;
-      } catch(_){}
-      buildShellMenu();
-      wire();
-
-      await listen('term-output', e => {
-        const p = bySession.get(e.payload.id);
-        if (p) p.term.write(b64ToBytes(e.payload.data));
-      });
-      await listen('term-exit', e => {
-        const p = bySession.get(e.payload);
-        if (p){
-          p.dead = true;
-          p.term.write('\r\n\x1b[38;5;209m[shell exited]\x1b[0m\r\n');
-          updateChrome();
-        }
-      });
-
-      await newTab(shells[0]);
-    },
-    openAgentView,
-
-    /* ══ voice-control surface (Day 5 — additive) ══
-       All methods no-op safely if the terminal hasn't booted yet. */
-    async ensureReady(){ if (!ready) await kiteTerm.init(); return ready; },
-    // The pane that keystrokes/commands should target: the focused real (PTY) pane.
-    _voiceTargetPane(){
-      const t = active;
-      if (!t) return null;
-      let p = t.focused;
-      if (!p || p.sid == null || p.dead){
-        // find any live PTY pane in this tab
-        p = leaves(t.root).map(l => l.pane).find(pp => pp && pp.sid != null && !pp.dead) || null;
-      }
-      return p;
-    },
-    // Type + run a command in the focused terminal (opens one if none exists).
-    async runCommand(cmd){
-      cmd = String(cmd || '').trim();
-      if (!cmd) return false;
-      if (typeof switchTab === 'function') switchTab(8);
-      await kiteTerm.ensureReady();
-      let p = kiteTerm._voiceTargetPane();
-      if (!p){ await newTab(shells[0]); p = kiteTerm._voiceTargetPane(); }
-      if (!p || p.sid == null) return false;
-      focusPane(p);
-      try { await invoke('term_write', { id: p.sid, data: cmd + '\r' }); return true; }
-      catch(_){ return false; }
-    },
-    // Open a fresh terminal tab.
-    async newTerminal(){
-      if (typeof switchTab === 'function') switchTab(8);
-      await kiteTerm.ensureReady();
-      await newTab(shells[0]);
-      return true;
-    },
-    // cd into a folder in the focused terminal.
-    async cdTo(folder){
-      folder = String(folder || '').trim();
-      if (!folder) return false;
-      const quoted = /[\s]/.test(folder) ? '"' + folder.replace(/"/g,'') + '"' : folder;
-      return kiteTerm.runCommand('cd ' + quoted);
-    },
-    // Read the last N non-empty lines of visible + scrollback text from the focused pane.
-    lastOutput(nLines){
-      const p = kiteTerm._voiceTargetPane();
-      if (!p || !p.term){ return ''; }
-      try {
-        const buf = p.term.buffer.active;
-        const total = buf.length;
-        const want = Math.min(nLines || 40, total);
-        const out = [];
-        for (let i = total - want; i < total; i++){
-          const line = buf.getLine(i);
-          if (line) out.push(line.translateToString(true).replace(/\s+$/,''));
-        }
-        // trim trailing blank lines
-        while (out.length && !out[out.length-1].trim()) out.pop();
-        return out.join('\n').slice(-4000);
-      } catch(_){ return ''; }
-    },
-    // Info about the focused terminal (for confirmations).
-    activeContext(){
-      const p = kiteTerm._voiceTargetPane();
-      return {
-        hasActive: !!p,
-        shell: (p && p.shell && p.shell.label) || (active && active.shell && active.shell.label) || '',
-        alive: !!(p && p.sid != null && !p.dead)
-      };
-    }
-  };
-
-  window.kiteTerm = kiteTerm;
-  // Expose Tauri's event listener so the (classic-script) agents engine can
-  // subscribe to streamed `agent-shell` events without its own import.
   window.kiteListen = listen;
-  // If the tab was clicked before this module finished loading, honour it now.
-  if (window.__wantTerm) kiteTerm.init();
+</script>
+
+
+<!-- ═══════════ AGENT MEMORY (Memory MCP: recall + save) ═══════════ -->
+<script>
+/* Self-contained. Publishes window.kiteMemory. Backed by the Memory MCP server
+   (@modelcontextprotocol/server-memory) via window.kiteMCP. Agents with memory
+   enabled recall relevant context before running and save durable facts after.
+   Includes a browser modal (opened from the MCP tab). Touches no existing tab. */
+window.kiteMemory = (function(){
+  const SERVER = 'memory';
+  const esc = s => String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+  const say = (m,c)=>{ if(typeof toast==='function') toast(m, c||'var(--teal)'); };
+  async function ensure(){
+    if(!window.kiteMCP || !window.kiteMCP.ensureServer) throw new Error('MCP subsystem unavailable');
+    return await window.kiteMCP.ensureServer(SERVER);
+  }
+  function keywords(task){
+    return String(task||'').toLowerCase().replace(/[^a-z0-9 ]/g,' ').split(/\s+/).filter(w=>w.length>3).slice(0,6).join(' ');
+  }
+  function parseJson(text){
+    let raw=String(text||'').trim();
+    const f=raw.match(/```(?:json)?\s*([\s\S]*?)```/i); if(f) raw=f[1].trim();
+    const a=raw.indexOf('{'), b=raw.lastIndexOf('}'); if(a>=0&&b>a) raw=raw.slice(a,b+1);
+    try{ return JSON.parse(raw); }catch(_){ return null; }
+  }
+  // Recall context relevant to a task; returns a text block or '' if nothing useful.
+  async function recall(task){
+    try{
+      await ensure();
+      const q = keywords(task) || String(task||'');
+      const res = await window.kiteMCP.callTool(SERVER, 'search_nodes', { query: q }, { noApproval:true });
+      const txt = String(res||'').trim();
+      if(!txt) return '';
+      // memory server returns a graph JSON; empty graph → skip
+      const g = parseJson(txt);
+      if(g && Array.isArray(g.entities) && !g.entities.length) return '';
+      return txt.slice(0, 2000);
+    }catch(_){ return ''; }
+  }
+  // Extract durable facts from a finished run and store them. Best-effort.
+  async function remember(task, result, model){
+    try{
+      await ensure();
+      const sys = 'Extract 1 to 4 DURABLE, reusable facts worth remembering from this agent run. '
+        + 'Reply with JSON only: {"facts":[{"name":"<short entity name>","type":"Fact|Preference|Pattern|Project","observations":["<concise fact>"]}]}. '
+        + 'Only stable, reusable things (data values, approaches that worked, user preferences, project facts). If nothing is worth saving, reply {"facts":[]}.';
+      const user = 'Task: '+String(task||'')+'\n\nResult:\n'+String(result||'').slice(0,3000);
+      let facts=[];
+      try{ const r=await kiteAsk([{role:'system',content:sys},{role:'user',content:user}]); const j=parseJson(r&&r.text); if(j&&Array.isArray(j.facts)) facts=j.facts; }catch(_){}
+      const entities = facts.filter(f=>f&&f.name).slice(0,4).map(f=>({
+        name: String(f.name).slice(0,60),
+        entityType: String(f.type||'Fact'),
+        observations: (Array.isArray(f.observations)?f.observations:[String(f.observations||'')]).filter(Boolean).slice(0,5).map(o=>String(o).slice(0,240))
+      })).filter(e=>e.observations.length);
+      if(!entities.length) return 0;
+      try{ await window.kiteMCP.callTool(SERVER, 'create_entities', { entities }, { noApproval:true }); }
+      catch(_){ /* likely duplicate names — fall back to appending observations */
+        try{ await window.kiteMCP.callTool(SERVER, 'add_observations', { observations: entities.map(e=>({ entityName:e.name, contents:e.observations })) }, { noApproval:true }); }catch(__){}
+      }
+      return entities.length;
+    }catch(_){ return 0; }
+  }
+
+  /* ── browser modal ── */
+  let modal=null;
+  function ensureModal(){
+    if(modal) return modal;
+    modal=document.createElement('div');
+    modal.id='km-modal';
+    modal.style.cssText='position:fixed;inset:0;z-index:1000;background:rgba(4,6,9,.6);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center';
+    modal.innerHTML='<div style="width:min(640px,94vw);max-height:82vh;display:flex;flex-direction:column;background:var(--surface,#14141c);border:1px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5)">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;padding:15px 20px;border-bottom:1px solid var(--border)"><b style="font-size:15px;color:var(--t1)">Agent Memory</b>'
+      + '<button id="km-x" style="background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer">×</button></div>'
+      + '<div id="km-body" style="padding:16px 20px;overflow:auto;font-size:13px;color:var(--t1)"></div>'
+      + '<div style="display:flex;gap:10px;padding:12px 20px;border-top:1px solid var(--border);justify-content:flex-end">'
+      + '<button id="km-refresh" class="pj-btn">Refresh</button><button id="km-clear" class="pj-btn danger">Clear all</button></div></div>';
+    document.body.appendChild(modal);
+    modal.addEventListener('click',e=>{ if(e.target===modal) modal.style.display='none'; });
+    modal.querySelector('#km-x').addEventListener('click',()=>modal.style.display='none');
+    modal.querySelector('#km-refresh').addEventListener('click',loadGraph);
+    modal.querySelector('#km-clear').addEventListener('click',clearAll);
+    return modal;
+  }
+  async function loadGraph(){
+    const body=modal.querySelector('#km-body');
+    body.innerHTML='<div style="color:var(--t3)">Loading memory graph…</div>';
+    try{
+      await ensure();
+      const res = await window.kiteMCP.callTool(SERVER, 'read_graph', {}, { noApproval:true });
+      const g = parseJson(res) || {};
+      const ents = Array.isArray(g.entities)?g.entities:[];
+      if(!ents.length){ body.innerHTML='<div style="color:var(--t3)">No memories yet. Run an agent with memory enabled and Kite will save durable facts here.</div>'; return; }
+      body.innerHTML = ents.map(e=>{
+        const obs=(e.observations||[]).map(o=>'<li style="margin:2px 0;color:var(--t2)">'+esc(o)+'</li>').join('');
+        return '<div style="border:1px solid var(--border);border-radius:9px;padding:11px 13px;margin-bottom:10px">'
+          + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px"><b style="color:var(--t1)">'+esc(e.name)+'</b>'
+          + '<span style="font-family:var(--mono,monospace);font-size:9.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--teal,#2dd4bf);border:1px solid var(--border);border-radius:5px;padding:1px 6px">'+esc(e.entityType||'Fact')+'</span>'
+          + '<button class="pj-mini danger" data-del="'+esc(e.name).replace(/"/g,'&quot;')+'" style="margin-left:auto">Delete</button></div>'
+          + '<ul style="margin:0;padding-left:18px;font-size:12px">'+obs+'</ul></div>';
+      }).join('');
+      body.querySelectorAll('[data-del]').forEach(btn=>btn.addEventListener('click',async()=>{
+        try{ await window.kiteMCP.callTool(SERVER,'delete_entities',{ entityNames:[btn.getAttribute('data-del')] },{ noApproval:true }); loadGraph(); }catch(e){ say('Delete failed: '+((e&&e.message)||e),'var(--coral)'); }
+      }));
+    }catch(e){ body.innerHTML='<div style="color:var(--coral,#ff6b6b)">Could not load memory: '+esc((e&&e.message)||e)+'</div>'; }
+  }
+  async function clearAll(){
+    if(!confirm('Delete ALL saved memories? This cannot be undone.')) return;
+    try{
+      await ensure();
+      const res = await window.kiteMCP.callTool(SERVER,'read_graph',{},{ noApproval:true });
+      const g=parseJson(res)||{}; const names=(g.entities||[]).map(e=>e.name);
+      if(names.length) await window.kiteMCP.callTool(SERVER,'delete_entities',{ entityNames:names },{ noApproval:true });
+      loadGraph(); say('Memory cleared');
+    }catch(e){ say('Clear failed: '+((e&&e.message)||e),'var(--coral)'); }
+  }
+  function openBrowser(){ ensureModal().style.display='flex'; loadGraph(); }
+
+  return { recall, remember, openBrowser, ensure };
+})();
+</script>
+
+
+<!-- ═══════════ GLOBAL DRAG & DROP (Tauri file drops) ═══════════ -->
+<script>
+/* Routes OS file drops to whichever tab is active:
+     Chat        → text/images become chat context
+     Agents      → dropped files added to the agent's working context
+     Connections → a tokens .json imports connection keys
+   Tauri intercepts OS drops and delivers absolute PATHS via tauri://drag-*
+   events; read_dropped_file (Rust) reads each one. Self-contained classic
+   script — shares the global scope with the chat module (_chatAttachment) and
+   the window.kite* helpers; subscribes once window.kiteListen exists. */
+(function(){
+  const bridge = window.__TAURI_INTERNALS__ && window.__TAURI_INTERNALS__.invoke;
+  if (!bridge) return; // browser preview has no native bridge / no OS drops
+  const invoke = (c,a) => bridge(c,a);
+
+  let overlay = null;
+  function ensureOverlay(){
+    if (overlay) return overlay;
+    overlay = document.createElement('div');
+    overlay.id = 'kite-drop-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;display:none;align-items:center;justify-content:center;pointer-events:none;background:rgba(6,10,12,.55);backdrop-filter:blur(2px)';
+    overlay.innerHTML = '<div style="border:2.5px dashed var(--teal,#2dd4bf);border-radius:16px;padding:32px 46px;background:rgba(45,212,191,.08);text-align:center;box-shadow:0 12px 48px rgba(0,0,0,.45)">'
+      + '<div style="font-size:30px;margin-bottom:8px;color:var(--teal,#2dd4bf)">↓</div>'
+      + '<div id="kite-drop-title" style="font-family:var(--mono,monospace);font-size:15px;color:var(--teal,#2dd4bf);font-weight:700;letter-spacing:.4px">Drop to add</div>'
+      + '<div id="kite-drop-sub" style="font-size:11.5px;color:var(--t2,#c9c9d4);margin-top:6px;font-family:var(--mono,monospace)"></div></div>';
+    document.body.appendChild(overlay);
+    return overlay;
+  }
+  const TARGETS = {
+    'tab-7':  { label:'Chat',        sub:'text & images become chat context' },
+    'tab-9':  { label:'Agent',       sub:'files added to the agent’s working context' },
+    'tab-10': { label:'Connections', sub:'a tokens .json imports your keys' }
+  };
+  function activeTabId(){ const el = document.querySelector('.tab-panel.active'); return el ? el.id : null; }
+  function currentTarget(){ return TARGETS[activeTabId()] || { label:'Chat', sub:'text & images become chat context' }; }
+  function showOverlay(){
+    const o = ensureOverlay(), t = currentTarget();
+    o.querySelector('#kite-drop-title').textContent = 'Drop to add to ' + t.label;
+    o.querySelector('#kite-drop-sub').textContent = t.sub;
+    o.style.display = 'flex';
+  }
+  function hideOverlay(){ if (overlay) overlay.style.display = 'none'; }
+  const say = (m,c) => { if (typeof toast === 'function') toast(m, c || 'var(--teal)'); };
+
+  async function handleDrop(paths){
+    hideOverlay();
+    if (!paths || !paths.length) return;
+    const files = [];
+    for (const p of paths){
+      try { files.push(await invoke('read_dropped_file', { path: p })); }
+      catch(e){ say('Could not read ' + p + ' — ' + ((e && e.message) || e), 'var(--coral)'); }
+    }
+    if (!files.length) return;
+    const id = activeTabId();
+    if (id === 'tab-10') return dropConnections(files);
+    return dropChat(files); // chat, agents, or any other tab
+  }
+
+  function dropChat(files){
+    const img = files.find(f => f.kind === 'image');
+    if (img){
+      _chatAttachment = { name: img.name, content: '[image attached]', dataUrl: img.content };
+      if (typeof ocRenderAttachChip === 'function') ocRenderAttachChip();
+      if (typeof switchTab === 'function') switchTab(7);
+      return say('Attached image ' + img.name);
+    }
+    const texts = files.filter(f => f.kind === 'text');
+    if (!texts.length) return say('Only text & image files can be added as context', 'var(--coral)');
+    const combined = texts.map(f => '### ' + f.name + '\n' + f.content).join('\n\n');
+    const name = texts.length === 1 ? texts[0].name : (texts.length + ' files');
+    _chatAttachment = { name, content: combined.slice(0, 60000) };
+    if (typeof ocRenderAttachChip === 'function') ocRenderAttachChip();
+    if (typeof switchTab === 'function') switchTab(7);
+    say('Added ' + name + ' as context');
+  }
+
+  function dropConnections(files){
+    const jf = files.find(f => f.kind === 'text' && /\.json$/i.test(f.name)) || files.find(f => f.kind === 'text');
+    if (!jf) return say('Drop a tokens .json file to import connection keys', 'var(--coral)');
+    let obj = null; try { obj = JSON.parse(jf.content); } catch(_){}
+    if (!obj) return say('That file is not valid JSON', 'var(--coral)');
+    const n = (window.kiteConnections && window.kiteConnections.importTokens) ? window.kiteConnections.importTokens(obj) : 0;
+    say(n ? ('Imported keys for ' + n + ' service' + (n > 1 ? 's' : '')) : 'No recognizable service tokens in that JSON', n ? 'var(--teal)' : 'var(--coral)');
+  }
+
+  // Subscribe once the terminal module has published window.kiteListen.
+  (function wire(){
+    if (!window.kiteListen) return setTimeout(wire, 200);
+    window.kiteListen('tauri://drag-enter', () => showOverlay()).catch(()=>{});
+    window.kiteListen('tauri://drag-over',  () => { if (!overlay || overlay.style.display === 'none') showOverlay(); }).catch(()=>{});
+    window.kiteListen('tauri://drag-leave', () => hideOverlay()).catch(()=>{});
+    window.kiteListen('tauri://drag-drop',  e => { const p = e && e.payload; handleDrop(p && (p.paths || p)); }).catch(()=>{});
+  })();
+})();
 </script>
 </body>
 </html>

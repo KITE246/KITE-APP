@@ -2,13 +2,11 @@
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::io::{Read, Write};
 use std::process::Command;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::Mutex;
 
 use base64::Engine;
-use portable_pty::{native_pty_system, Child, CommandBuilder, MasterPty, PtySize};
 use tauri::{Emitter, Manager, State};
 
 #[derive(Deserialize)]
@@ -191,226 +189,6 @@ fn open_mic_settings() -> Result<(), String> {
         .args(["/C", "start", "ms-settings:privacy-microphone"])
         .spawn()
         .map_err(|e| e.to_string())?;
-    Ok(())
-}
-
-// ─────────────────────────── TERMINAL (ConPTY) ───────────────────────────
-// Real shell sessions running inside pseudo terminals. Multiple sessions are
-// kept in a registry keyed by id so the frontend can drive several tabs and
-// split panes at once. Output streams to xterm.js as base64 `term-output`
-// events; keystrokes come back via `term_write`.
-
-/// One live PTY session. `master` is kept for resize; `writer` feeds stdin;
-/// `child` is held so we can kill it on close.
-struct TermSession {
-    master: Box<dyn MasterPty + Send>,
-    writer: Box<dyn Write + Send>,
-    child: Box<dyn Child + Send + Sync>,
-}
-
-#[derive(Default)]
-struct TermState {
-    sessions: Mutex<HashMap<u32, TermSession>>,
-    next_id: AtomicU32,
-}
-
-#[derive(Clone, Serialize)]
-struct TermOutput {
-    id: u32,
-    data: String,
-}
-
-#[derive(Serialize)]
-struct ShellInfo {
-    id: String,
-    label: String,
-    cmd: String,
-    args: Vec<String>,
-}
-
-/// Enumerate the shells available on this machine for the quick-launch menu.
-/// PowerShell and CMD are always present on Windows; Git Bash and WSL are
-/// included only when found on disk.
-#[tauri::command]
-fn term_shells() -> Vec<ShellInfo> {
-    let mut shells = vec![
-        ShellInfo {
-            id: "powershell".into(),
-            label: "PowerShell".into(),
-            cmd: "powershell.exe".into(),
-            args: vec![],
-        },
-        ShellInfo {
-            id: "cmd".into(),
-            label: "CMD".into(),
-            cmd: "cmd.exe".into(),
-            args: vec![],
-        },
-    ];
-
-    let mut git_candidates: Vec<String> = vec![
-        "C:\\Program Files\\Git\\bin\\bash.exe".into(),
-        "C:\\Program Files (x86)\\Git\\bin\\bash.exe".into(),
-    ];
-    if let Ok(lad) = std::env::var("LOCALAPPDATA") {
-        git_candidates.push(format!("{}\\Programs\\Git\\bin\\bash.exe", lad));
-    }
-    for p in git_candidates {
-        if std::path::Path::new(&p).exists() {
-            shells.push(ShellInfo {
-                id: "gitbash".into(),
-                label: "Git Bash".into(),
-                cmd: p,
-                args: vec!["-i".into(), "-l".into()],
-            });
-            break;
-        }
-    }
-
-    let windir = std::env::var("WINDIR").unwrap_or_else(|_| "C:\\Windows".into());
-    if std::path::Path::new(&format!("{}\\System32\\wsl.exe", windir)).exists() {
-        shells.push(ShellInfo {
-            id: "wsl".into(),
-            label: "WSL".into(),
-            cmd: "wsl.exe".into(),
-            args: vec![],
-        });
-    }
-
-    shells
-}
-
-/// Spawn a shell inside a new PTY sized `rows`x`cols` and return its session
-/// id. A background thread pumps PTY output to the `term-output` event and
-/// announces death via `term-exit`.
-#[tauri::command]
-fn term_open(
-    app: tauri::AppHandle,
-    state: State<TermState>,
-    rows: u16,
-    cols: u16,
-    shell: Option<String>,
-    args: Option<Vec<String>>,
-) -> Result<u32, String> {
-    let pty_system = native_pty_system();
-    let pair = pty_system
-        .openpty(PtySize {
-            rows,
-            cols,
-            pixel_width: 0,
-            pixel_height: 0,
-        })
-        .map_err(|e| e.to_string())?;
-
-    let sh = shell.unwrap_or_else(|| {
-        if cfg!(windows) {
-            "powershell.exe".into()
-        } else {
-            "bash".into()
-        }
-    });
-    let mut cmd = CommandBuilder::new(sh);
-    if let Some(a) = args {
-        cmd.args(a);
-    }
-    if let Ok(home) = std::env::var(if cfg!(windows) { "USERPROFILE" } else { "HOME" }) {
-        cmd.cwd(home);
-    }
-
-    let child = pair
-        .slave
-        .spawn_command(cmd)
-        .map_err(|e| e.to_string())?;
-    // Drop the slave so the reader sees EOF when the child exits.
-    drop(pair.slave);
-
-    let id = state.next_id.fetch_add(1, Ordering::Relaxed) + 1;
-    let mut reader = pair.master.try_clone_reader().map_err(|e| e.to_string())?;
-    let writer = pair.master.take_writer().map_err(|e| e.to_string())?;
-
-    let app2 = app.clone();
-    std::thread::spawn(move || {
-        let mut buf = [0u8; 8192];
-        loop {
-            match reader.read(&mut buf) {
-                Ok(0) => break,
-                Ok(n) => {
-                    let b64 = base64::engine::general_purpose::STANDARD.encode(&buf[..n]);
-                    if app2
-                        .emit("term-output", TermOutput { id, data: b64 })
-                        .is_err()
-                    {
-                        break;
-                    }
-                }
-                Err(_) => break,
-            }
-        }
-        // Session is gone — drop our bookkeeping and tell the UI.
-        if let Some(st) = app2.try_state::<TermState>() {
-            if let Ok(mut map) = st.sessions.lock() {
-                map.remove(&id);
-            }
-        }
-        let _ = app2.emit("term-exit", id);
-    });
-
-    state
-        .sessions
-        .lock()
-        .map_err(|e| e.to_string())?
-        .insert(
-            id,
-            TermSession {
-                master: pair.master,
-                writer,
-                child,
-            },
-        );
-    Ok(id)
-}
-
-/// Write user input (keystrokes / paste) to a session's stdin.
-#[tauri::command]
-fn term_write(state: State<TermState>, id: u32, data: String) -> Result<(), String> {
-    let mut map = state.sessions.lock().map_err(|e| e.to_string())?;
-    if let Some(s) = map.get_mut(&id) {
-        s.writer
-            .write_all(data.as_bytes())
-            .map_err(|e| e.to_string())?;
-        s.writer.flush().map_err(|e| e.to_string())?;
-    }
-    Ok(())
-}
-
-/// Resize a session's PTY when the xterm fit-addon reflows.
-#[tauri::command]
-fn term_resize(state: State<TermState>, id: u32, rows: u16, cols: u16) -> Result<(), String> {
-    let map = state.sessions.lock().map_err(|e| e.to_string())?;
-    if let Some(s) = map.get(&id) {
-        s.master
-            .resize(PtySize {
-                rows,
-                cols,
-                pixel_width: 0,
-                pixel_height: 0,
-            })
-            .map_err(|e| e.to_string())?;
-    }
-    Ok(())
-}
-
-/// Kill one session and remove it from the registry.
-#[tauri::command]
-fn term_close(state: State<TermState>, id: u32) -> Result<(), String> {
-    let sess = state
-        .sessions
-        .lock()
-        .map_err(|e| e.to_string())?
-        .remove(&id);
-    if let Some(mut s) = sess {
-        let _ = s.child.kill();
-    }
     Ok(())
 }
 
@@ -667,12 +445,296 @@ fn agent_shell_exec(app: tauri::AppHandle, req: ShellExecReq) -> Result<String, 
     Ok(format!("exit {}\n{}", code, s.trim()))
 }
 
+// ─────────────────────────── CODE INTERPRETER ───────────────────────────
+// The agent's run_code tool: write a snippet to a temp file, execute it with a
+// language-appropriate interpreter, stream stdout/stderr live to the frontend
+// as `agent-shell` events (same channel shell_exec uses, so the activity pane
+// mirrors it) and return exit code + captured output. Confined by nothing but
+// the hard timeout — approval is enforced in the frontend before we get here.
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RunCodeReq {
+    language: String,
+    code: String,
+    cwd: Option<String>,
+    exec_id: Option<String>,
+    timeout_secs: Option<u64>,
+}
+
+/// Map a loose language name to (interpreter, args-template, file-extension).
+/// The literal "{file}" in the args is replaced with the temp script path.
+fn code_runner(lang: &str) -> Result<(&'static str, Vec<&'static str>, &'static str), String> {
+    match lang.trim().to_lowercase().as_str() {
+        "python" | "py" | "python3" => Ok(("python", vec!["{file}"], "py")),
+        "javascript" | "js" | "node" | "nodejs" => Ok(("node", vec!["{file}"], "js")),
+        "typescript" | "ts" => Ok(("npx", vec!["-y", "tsx", "{file}"], "ts")),
+        "powershell" | "ps" | "ps1" | "pwsh" => Ok((
+            "powershell",
+            vec![
+                "-NoProfile",
+                "-NonInteractive",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "{file}",
+            ],
+            "ps1",
+        )),
+        "bash" | "sh" | "shell" => Ok(("bash", vec!["{file}"], "sh")),
+        "ruby" | "rb" => Ok(("ruby", vec!["{file}"], "rb")),
+        other => Err(format!(
+            "unsupported language '{}' — try python, javascript, powershell, bash, typescript or ruby",
+            other
+        )),
+    }
+}
+
+/// Execute a code snippet and return "exit N\n<output>". Mirrors agent_shell_exec's
+/// live streaming + polling-kill timeout, but keyed on interpreter + temp file.
+#[tauri::command]
+fn agent_run_code(app: tauri::AppHandle, req: RunCodeReq) -> Result<String, String> {
+    use std::io::{BufRead, BufReader};
+    use std::process::Stdio;
+    use std::sync::{Arc, Mutex};
+    use std::time::{Duration, Instant};
+
+    let exec_id = req.exec_id.clone().unwrap_or_default();
+    let (interp, arg_tmpl, ext) = code_runner(&req.language)?;
+    let timeout = Duration::from_secs(req.timeout_secs.unwrap_or(30).clamp(1, 300));
+
+    // Stage the snippet in a temp file. PowerShell gets a UTF-8 BOM so Windows
+    // PowerShell 5.1 reads it as UTF-8 (matching agent_shell_exec).
+    let n = SCRIPT_SEQ.fetch_add(1, Ordering::Relaxed);
+    let mut path = std::env::temp_dir();
+    path.push(format!("kite_code_{}_{}.{}", std::process::id(), n, ext));
+    let mut bytes: Vec<u8> = Vec::new();
+    if ext == "ps1" {
+        bytes.extend_from_slice(&[0xEF, 0xBB, 0xBF]);
+    }
+    bytes.extend_from_slice(req.code.as_bytes());
+    std::fs::write(&path, &bytes).map_err(|e| format!("temp script write failed: {}", e))?;
+
+    let path_str = path.to_string_lossy().to_string();
+    let args: Vec<String> = arg_tmpl
+        .iter()
+        .map(|a| if *a == "{file}" { path_str.clone() } else { (*a).to_string() })
+        .collect();
+
+    // On Windows, npx (typescript) is a .cmd shim that needs cmd /C to resolve.
+    let mut c = if cfg!(windows) && interp == "npx" {
+        let mut c = Command::new("cmd");
+        c.arg("/C").arg("npx").args(&args);
+        c
+    } else {
+        let mut c = Command::new(interp);
+        c.args(&args);
+        c
+    };
+    if let Some(cwd) = &req.cwd {
+        if !cwd.trim().is_empty() {
+            c.current_dir(cwd);
+        }
+    }
+    c.stdout(Stdio::piped()).stderr(Stdio::piped());
+
+    let mut child = match c.spawn() {
+        Ok(child) => child,
+        Err(e) => {
+            let _ = std::fs::remove_file(&path);
+            return Err(format!(
+                "failed to launch {} — is it installed and on PATH? ({})",
+                interp, e
+            ));
+        }
+    };
+    let stdout = child.stdout.take();
+    let stderr = child.stderr.take();
+    let acc = Arc::new(Mutex::new(String::new()));
+
+    let pump = |reader: Box<dyn std::io::Read + Send>, is_err: bool| {
+        let acc = acc.clone();
+        let app = app.clone();
+        let id = exec_id.clone();
+        std::thread::spawn(move || {
+            for line in BufReader::new(reader).lines().flatten() {
+                {
+                    let mut g = acc.lock().unwrap();
+                    if is_err {
+                        g.push_str("[stderr] ");
+                    }
+                    g.push_str(&line);
+                    g.push('\n');
+                }
+                let _ = app.emit(
+                    "agent-shell",
+                    ShellChunk {
+                        exec_id: id.clone(),
+                        stream: if is_err { "err".into() } else { "out".into() },
+                        chunk: line,
+                    },
+                );
+            }
+        })
+    };
+
+    let mut handles = vec![];
+    if let Some(out) = stdout {
+        handles.push(pump(Box::new(out), false));
+    }
+    if let Some(err) = stderr {
+        handles.push(pump(Box::new(err), true));
+    }
+
+    let start = Instant::now();
+    let mut timed_out = false;
+    let code = loop {
+        match child.try_wait() {
+            Ok(Some(status)) => break status.code().unwrap_or(-1),
+            Ok(None) => {
+                if start.elapsed() > timeout {
+                    let _ = child.kill();
+                    let _ = child.wait();
+                    timed_out = true;
+                    break -1;
+                }
+                std::thread::sleep(Duration::from_millis(50));
+            }
+            Err(e) => return Err(e.to_string()),
+        }
+    };
+    for h in handles {
+        let _ = h.join();
+    }
+    let _ = std::fs::remove_file(&path);
+
+    let mut s = acc.lock().unwrap().clone();
+    if s.len() > 12_000 {
+        s.truncate(12_000);
+        s.push_str("\n…[truncated]");
+    }
+    if timed_out {
+        s.push_str(&format!(
+            "\n[killed: timed out after {}s]",
+            timeout.as_secs()
+        ));
+    }
+    Ok(format!("exit {}\n{}", code, s.trim()))
+}
+
 /// Native folder picker for the New Agent form.
 #[tauri::command]
 fn pick_folder() -> Option<String> {
     rfd::FileDialog::new()
         .pick_folder()
         .map(|p| p.to_string_lossy().to_string())
+}
+
+// ─────────────────────────── DRAG & DROP ───────────────────────────
+// Tauri captures OS file drops itself and hands the frontend absolute PATHS
+// (not browser File objects). This command reads one dropped path so the app
+// can route it: text → context/cat, image → vision/data-URI, dir → cd. Unlike
+// the agent file tools it is deliberately NOT PathGuarded — the user chose the
+// file by dragging it — but it is read-only and size-capped.
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct DroppedFile {
+    kind: String,   // "text" | "image" | "dir" | "binary"
+    name: String,
+    path: String,
+    dir: String,    // parent directory (for terminal cd)
+    content: String, // text body, or "data:...;base64,..." for images
+    size: u64,
+}
+
+#[tauri::command]
+fn read_dropped_file(path: String) -> Result<DroppedFile, String> {
+    let p = std::path::Path::new(&path);
+    let meta = std::fs::metadata(p).map_err(|e| format!("cannot read {}: {}", path, e))?;
+    let name = p
+        .file_name()
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_else(|| path.clone());
+    let dir = p
+        .parent()
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_default();
+
+    if meta.is_dir() {
+        return Ok(DroppedFile {
+            kind: "dir".into(),
+            name,
+            path: path.clone(),
+            dir: path.clone(),
+            content: String::new(),
+            size: 0,
+        });
+    }
+
+    let size = meta.len();
+    let ext = p
+        .extension()
+        .map(|s| s.to_string_lossy().to_lowercase())
+        .unwrap_or_default();
+
+    const IMAGE_EXTS: [&str; 7] = ["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg"];
+    if IMAGE_EXTS.contains(&ext.as_str()) {
+        if size > 8_000_000 {
+            return Err("image too large (8 MB max)".into());
+        }
+        let bytes = std::fs::read(p).map_err(|e| e.to_string())?;
+        let mime = match ext.as_str() {
+            "png" => "image/png",
+            "gif" => "image/gif",
+            "webp" => "image/webp",
+            "bmp" => "image/bmp",
+            "svg" => "image/svg+xml",
+            _ => "image/jpeg",
+        };
+        let b64 = base64::engine::general_purpose::STANDARD.encode(&bytes);
+        return Ok(DroppedFile {
+            kind: "image".into(),
+            name,
+            path,
+            dir,
+            content: format!("data:{};base64,{}", mime, b64),
+            size,
+        });
+    }
+
+    // Anything else: try to read as text. Reject obviously-binary content.
+    if size > 3_000_000 {
+        return Err("file too large to read as text (3 MB max)".into());
+    }
+    let bytes = std::fs::read(p).map_err(|e| e.to_string())?;
+    // NUL byte in the first 8 KB → treat as binary, don't dump garbage.
+    let head = &bytes[..bytes.len().min(8192)];
+    if head.contains(&0u8) {
+        return Ok(DroppedFile {
+            kind: "binary".into(),
+            name,
+            path,
+            dir,
+            content: String::new(),
+            size,
+        });
+    }
+    const LIMIT: usize = 40_000;
+    let truncated = bytes.len() > LIMIT;
+    let slice = &bytes[..bytes.len().min(LIMIT)];
+    let mut content = String::from_utf8_lossy(slice).to_string();
+    if truncated {
+        content.push_str("\n…[truncated]");
+    }
+    Ok(DroppedFile {
+        kind: "text".into(),
+        name,
+        path,
+        dir,
+        content,
+        size,
+    })
 }
 
 // ─────────────────────────── GMAIL (IMAP + SMTP) ───────────────────────────
@@ -1089,7 +1151,6 @@ fn mcp_claude_config() -> Result<String, String> {
 
 fn main() {
     tauri::Builder::default()
-        .manage(TermState::default())
         .manage(McpState::default())
         .invoke_handler(tauri::generate_handler![
             http_proxy,
@@ -1097,15 +1158,12 @@ fn main() {
             tts_fetch,
             fetch_bytes,
             open_mic_settings,
-            term_shells,
-            term_open,
-            term_write,
-            term_resize,
-            term_close,
             agent_file_read,
             agent_file_write,
             agent_shell_exec,
+            agent_run_code,
             pick_folder,
+            read_dropped_file,
             gmail_list,
             gmail_search,
             gmail_read,
