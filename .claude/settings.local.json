@@ -94,7 +94,10 @@
       "Bash(mv discord-rpc-sidecar.js discord-rpc-sidecar.cjs)",
       "Bash(node --check discord-rpc-sidecar.cjs)",
       "Bash(node --check scratch_d.js)",
-      "Bash(rm -f scratch_d.js)"
+      "Bash(rm -f scratch_d.js)",
+      "Bash(timeout 3 node discord-rpc-sidecar.cjs 123456789012345678)",
+      "Bash(awk '/DISCORD RICH PRESENCE \\\\\\(sidecar bridge\\\\\\)/,/^<\\\\/script>/' src/index.html)",
+      "Bash(awk 'NR>=1717 && NR<=1720' src/index.html)"
     ]
   }
 }

@@ -1201,14 +1201,16 @@ body.light .kv-bubble{background:linear-gradient(135deg,rgba(250,250,252,.92),rg
       <div style="width:44px;height:44px;border-radius:8px;background:#0e0e11;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:700;color:#5865F2;font-size:11px;flex:none">KITE</div>
       <div style="min-width:0">
         <div style="font-family:var(--mono);font-size:9px;letter-spacing:.5px;text-transform:uppercase;color:var(--t3)">Playing a game</div>
-        <div id="discord-prev-details" style="font-size:12px;font-weight:600;color:var(--t1)">Kite</div>
+        <div id="discord-prev-details" style="font-size:12px;font-weight:600;color:var(--t1)">Workspace</div>
         <div id="discord-prev-state" style="font-size:11px;color:var(--t2)">Idle</div>
       </div>
     </div>
     <div style="display:flex;gap:10px">
       <button class="btn btn-teal" onclick="if(window.kiteDiscord)kiteDiscord.saveSettings()" style="font-size:11px;padding:9px 20px">Save</button>
       <button class="btn btn-dim" onclick="if(window.kiteDiscord)kiteDiscord.test()" style="font-size:11px;padding:9px 20px">Test presence</button>
+      <button class="btn btn-dim" onclick="if(window.kiteDiscord)kiteDiscord.stop()" style="font-size:11px;padding:9px 20px">Stop</button>
     </div>
+    <div id="discord-log" style="font-family:var(--mono);font-size:10px;color:var(--t3);margin-top:10px;white-space:pre-wrap;word-break:break-word;min-height:14px"></div>
   </div>
   <div class="foot" style="margin-top:40px"><div class="foot-brand"><div class="foot-diamond"></div><div class="foot-name">Kite</div></div><div class="foot-note">API KEYS · V4 · 2025</div></div>
 </div><!-- /tab-4 -->
@@ -4107,7 +4109,8 @@ const kiteVoice=(function(){
       '{"action":"navigate","tab":"chat|agents|terminal|keys|connections|mcp"} — switch to a tab ("go to terminal", "show agents", "open connections")',
       '{"action":"send_message","message":"<text>"} — put text in the chat box and send it as-is',
       '{"action":"generate_image","prompt":"<text>"} — user wants to create/draw/generate a picture or image',
-      '{"action":"new_agent","task":"<full task>","tools":["<hint>",...]} — start an autonomous AGENT. Put any named tools/services/MCPs in "tools" (e.g. "use firecrawl and scrape nvidia" -> {"task":"scrape nvidia website","tools":["firecrawl"]}; "use github to list my repos" -> tools:["github"]). Omit "tools" if none named.',
+      '{"action":"preset","preset":"<key>","input":"<topic/URL/description or empty>"} — launch a named agent PRESET (a workflow with its tools pre-wired). Keys ONLY: research, scrape, code, data, email, github, briefing, image. Examples: "research quantum computing" -> {"preset":"research","input":"quantum computing"}; "run my daily briefing" -> {"preset":"briefing"}; "check my emails" -> {"preset":"email","input":"summarize the latest ones"}; "what are my github issues" -> {"preset":"github","input":"list my open issues"}; "analyze sales.csv" -> {"preset":"data","input":"sales.csv"}; "scrape example.com" -> {"preset":"scrape","input":"example.com"}. Prefer this over new_agent whenever the request clearly fits one of these workflows.',
+      '{"action":"new_agent","task":"<full task>","tools":["<hint>",...]} — start an autonomous AGENT for anything that does NOT fit a preset. Put any named tools/services/MCPs in "tools" (e.g. "use firecrawl and scrape nvidia" -> {"task":"scrape nvidia website","tools":["firecrawl"]}; "use github to list my repos" -> tools:["github"]). Omit "tools" if none named.',
       '{"action":"coordinator","task":"<big goal>"} — user wants a COORDINATOR to break a big goal into parallel workers ("run coordinator on ...", "coordinate ...")',
       '{"action":"cancel_agent","name":"<agent name or empty>"} — stop/cancel a running agent',
       '{"action":"agent_status"} — user asks how the agents are doing ("status", "agent status", "what are the agents doing")',
@@ -4222,6 +4225,20 @@ const kiteVoice=(function(){
               if(typeof chatSend==='function')chatSend();
             }catch(_){}
             setState('idle');await speak('Creating that image');busy=false;return;
+          }
+          case 'preset':{
+            const key=(cmd.preset||'').trim();
+            const input=(cmd.input||'').trim();
+            let a=null,pname='';
+            try{
+              if(window.kiteAgents&&window.kiteAgents.launchPreset){
+                const r=window.kiteAgents.launchPreset(key||clean,input);
+                if(r){ a=r.agent; pname=r.preset&&r.preset.name; }
+              }
+            }catch(e){log('preset err',e)}
+            setState('idle');
+            await speak(a?('Starting the '+(pname||'agent')+' preset'):'I could not find that preset');
+            busy=false;return;
           }
           case 'new_agent':{
             const task=(cmd.task||clean).trim();
@@ -6322,18 +6339,19 @@ window.kiteMCP = (function(){
     /* ── CREATIVE (creative flag) ── */
     image_generate: {
       flag: 'creative', approval: false,
-      desc: 'image_generate — args {"prompt": string}. Generate an image from a text prompt (Pollinations, no key needed), shown inline in the activity stream.',
+      desc: 'image_generate — args {"prompt": string}. Generate an image from a text prompt. Uses the same engine as Chat: Hugging Face FLUX.1-schnell when a Hugging Face key is set, otherwise a keyless fallback. Shown inline in the activity stream.',
       run: async (a, args) => {
         const prompt = args&&args.prompt; if (!prompt) throw new Error('image_generate needs args.prompt');
-        const seed = (a._imgSeq=(a._imgSeq||0)+1);
-        const url = 'https://image.pollinations.ai/prompt/'+encodeURIComponent(String(prompt))+'?width=1024&height=1024&nologo=true&seed='+((Date.now()%100000)+seed);
         pushAct(a, { t:'info', text:'Generating image…' }); if (AG.selected===a.id) renderStream(a);
-        const r = await fetch(url); if (!r.ok) throw new Error('image generation failed (HTTP '+r.status+')');
-        const blob = await r.blob();
-        const uri = await new Promise((res,rej)=>{ const fr=new FileReader(); fr.onload=()=>res(fr.result); fr.onerror=rej; fr.readAsDataURL(blob); });
+        // Reuse Chat's image pipeline (HF FLUX with the user's key, then fallback).
+        let uri = '';
+        if (typeof ocGenerateImage === 'function'){
+          try { uri = await ocGenerateImage(String(prompt)); } catch(e){ uri = ''; }
+        }
+        if (!uri) throw new Error('image generation failed — check that a Hugging Face key is set in the API Keys tab (the same key Chat uses for images), then try again.');
         a.artifacts=a.artifacts||[]; a.artifacts.push({ kind:'image', name:String(prompt).slice(0,40), src:uri });
         pushAct(a, { t:'image', imgType:'image', src:uri, caption:String(prompt).slice(0,60) }); if (AG.selected===a.id) renderDetail(a);
-        return 'Generated an image for "'+String(prompt).slice(0,60)+'" and shown it in the activity stream.';
+        return 'Generated an image for "'+String(prompt).slice(0,60)+'" via Hugging Face and shown it in the activity stream.';
       }
     },
     audio_generate: {
@@ -6655,7 +6673,27 @@ window.kiteMCP = (function(){
     a.result = msg;
     renderList(); if (AG.selected === a.id) renderDetail(a);
     updateBadge();
+    // PART 5 — voice: announce completion of a top-level agent by speech.
+    // Coordinators speak their own richer line; subagents (depth>0) stay silent.
+    if (a.depth === 0 && a.engine !== 'coordinator' && window.kiteVoice && window.kiteVoice.speak){
+      try{
+        let line = '';
+        if (status === 'done') line = a.name + ' is done. ' + firstSentence(msg);
+        else if (status === 'error') line = a.name + ' stopped with an error.';
+        else if (status === 'cancelled') line = a.name + ' was cancelled.';
+        if (line.trim()) window.kiteVoice.speak(line.trim().slice(0, 240));
+      }catch(_){}
+    }
     return { status: status, result: a.result };
+  }
+  // First sentence of a result, stripped of markdown/code, for a spoken summary.
+  function firstSentence(t){
+    let s = String(t||'').replace(/```[\s\S]*?```/g,' ').replace(/[#*_`>|]/g,'').replace(/\s+/g,' ').trim();
+    if (!s) return '';
+    const m = s.match(/^.*?[.!?](\s|$)/);
+    let out = (m ? m[0] : s).trim();
+    if (out.length > 160) out = out.slice(0, 157) + '…';
+    return out;
   }
 
   /* ── COORDINATOR ENGINE: analyze → spawn parallel workers → synthesize ── */
@@ -7292,9 +7330,18 @@ window.kiteMCP = (function(){
       if (wm && !wm.options.length) wm.innerHTML = agentModelOptions('api');
     }
   }
+  /* ── auto-naming: user-started agents get codenames Horizon → Orbit → Atlas →
+     Vector (lowest free slot among existing sessions); "Agent N" once all four
+     are taken. Presets, workers and coordinators keep their own names. ── */
+  const AGENT_CODENAMES = ['Horizon', 'Orbit', 'Atlas', 'Vector'];
+  function nextCodename(){
+    const used = new Set([...AG.agents.values()].map(a => a && a.name));
+    for (const nm of AGENT_CODENAMES){ if (!used.has(nm)) return nm; }
+    return 'Agent ' + (AG.seq + 1);
+  }
   function openModal(){
     $('ag-modal-err').textContent = '';
-    $('ag-f-name').value = 'Agent ' + (AG.seq + 1);
+    $('ag-f-name').value = nextCodename();
     $('ag-f-task').value = '';
     $('ag-f-engine').value = 'api';
     syncModelSelect();
@@ -7361,7 +7408,7 @@ window.kiteMCP = (function(){
   }
 
   function startFromForm(){
-    const name = $('ag-f-name').value.trim() || 'Agent';
+    const name = $('ag-f-name').value.trim() || nextCodename();
     const task = $('ag-f-task').value.trim();
     if (!task){ $('ag-modal-err').textContent = 'Give the agent a task.'; return; }
     if (runningCount() >= MAX_AGENTS){ $('ag-modal-err').textContent = 'Max ' + MAX_AGENTS + ' agents running.'; return; }
@@ -7496,7 +7543,7 @@ window.kiteMCP = (function(){
       if (runningCount() >= MAX_AGENTS) return null;
       const tools = Object.assign({ web: true, read: true, write: false, shell: false, spawn: false }, opts.tools || {});
       const a = createAgent({
-        name: opts.name || deriveName(task),
+        name: opts.name || nextCodename(),
         task: task,
         engine: opts.engine || 'api', model: opts.model || 'auto', cwd: opts.cwd || '',
         tools,
@@ -7611,6 +7658,34 @@ window.kiteMCP = (function(){
       return this.startQuick(cfg.task, { name: cfg.name, engine: cfg.engine, model: cfg.model, tools: cfg.tools });
     },
     focusAgent(id){ if (!AG.agents.get(id)) return false; if (typeof switchTab === 'function') switchTab(9); selectAgent(id); return true; },
+
+    // ── voice: match a preset by key or loose spoken name ("daily briefing" → briefing) ──
+    findPreset(q){
+      const s = String(q||'').toLowerCase().trim(); if (!s) return null;
+      let p = PRESETS.find(x => x.key === s); if (p) return p;
+      p = PRESETS.find(x => x.name.toLowerCase() === s); if (p) return p;
+      p = PRESETS.find(x => x.name.toLowerCase().includes(s) || s.includes(x.key)); if (p) return p;
+      const KW = { research:/research|report|look up|find out/, scrape:/scrape|crawl/, code:/\bcode\b|program|script/,
+        data:/\bdata\b|analy[sz]e|csv|excel|spreadsheet|chart/, email:/email|mail|inbox/,
+        github:/github|repo|issue|pull request|\bpr\b/, briefing:/brief|briefing|morning|daily/,
+        image:/image|picture|draw|render/ };
+      for (const k in KW){ if (KW[k].test(s)) return PRESETS.find(x => x.key === k); }
+      return null;
+    },
+    // ── voice: launch a preset directly; `input` fills the goal's [placeholder] ──
+    launchPreset(keyOrName, input){
+      const p = this.findPreset(keyOrName); if (!p) return null;
+      if (runningCount() >= MAX_AGENTS) return null;
+      const inp = String(input||'').trim();
+      let task = p.goal;
+      if (inp) task = /\[[^\]]+\]/.test(task) ? task.replace(/\[[^\]]+\]/, inp) : (task + ' ' + inp);
+      else task = task.replace(/\s*\[[^\]]+\]/g, '').replace(/\s{2,}/g,' ').trim();
+      const tools = {};
+      (p.flags || []).forEach(f => { tools[f] = true; });
+      (p.ext || []).forEach(t => { tools[t] = true; });
+      const a = this.startQuick(task, { name: p.name, tools });
+      return a ? { agent: a, preset: p } : null;
+    },
 
     applyPreset,
     // exposed for tests / integration
@@ -7874,6 +7949,8 @@ window.kiteDiscord = (function(){
     const d=document.getElementById('discord-prev-details'), s=document.getElementById('discord-prev-state');
     if(d)d.textContent=details; if(s)s.textContent=state;
   }
+  function logLine(s){ const e=document.getElementById('discord-log'); if(e) e.textContent=s; }
+  function emitIdle(){ render(); }
   function initUI(){
     const en=document.getElementById('discord-enabled'), ap=document.getElementById('discord-appid');
     if(en)en.checked=store.enabled; if(ap)ap.value=store.appId;
@@ -7895,70 +7972,60 @@ window.kiteDiscord = (function(){
     if(!store.enabled||!store.appId) return false;
     try{
       await nativeInvoke('mcp_start',{req:{id:SRV_ID,command:'node',args:[SIDE_PATH,store.appId],env:{}}});
-      running=true; setStatus('waiting for Discord…','var(--amber)');
-      emit({type:'idle'});
+      running=true; setStatus('waiting for Discord…','var(--amber)'); logLine('sidecar spawned · node '+SIDE_PATH.split('\\').pop());
+      emitIdle();
+      if(!_keepalive) _keepalive=setInterval(()=>{ if(running&&!active.size&&!doneTimer) emitIdle(); }, 25000);
       return true;
-    }catch(e){ running=false; setStatus('error — is Node installed?','var(--coral)'); return false; }
+    }catch(e){ running=false; setStatus('error — is Node installed?','var(--coral)'); logLine('mcp_start failed: '+((e&&e.message)||e)); return false; }
   }
+  let _keepalive=null;
   async function stop(){
     if(doneTimer){ clearTimeout(doneTimer); doneTimer=null; }
+    if(_keepalive){ clearInterval(_keepalive); _keepalive=null; }
     try{ await nativeInvoke('mcp_stop',{id:SRV_ID}); }catch(_){}
-    running=false;
+    running=false; setStatus('off',''); logLine('stopped');
   }
-  function emit(ev){
-    // reflect in the settings preview regardless of process state
-    if(ev.type==='running') preview('Running agent: '+(ev.name||'agent'), (ev.tool||'Working…'));
-    else if(ev.type==='approval') preview('Running agent: '+(ev.name||'agent'), 'Waiting for approval…');
-    else if(ev.type==='done') preview('Agent complete: '+(ev.name||'agent'), 'Completed in '+(ev.duration||'?')+' — Cost: $'+(ev.cost!=null?ev.cost:'0'));
-    else if(ev.type==='voice') preview('Kite Voice','Listening…');
-    else preview('Kite','Idle');
+  // Low-level: push a presence with explicit details/state text (count-only,
+  // no agent names / tools / cost — the user wants a clean roster count).
+  function push(details, state, startTs){
+    preview(details, state);
     if(!running) return;
-    try{ nativeInvoke('mcp_send',{id:SRV_ID,message:JSON.stringify(ev)}); }catch(_){}
+    const msg={ type:'custom', details, state };
+    if(startTs) msg.startTs=startTs;
+    try{ nativeInvoke('mcp_send',{id:SRV_ID,message:JSON.stringify(msg)}); }catch(_){}
   }
 
-  /* ── helpers ── */
-  function fmtDur(ms){ const s=Math.max(1,Math.round(ms/1000)); if(s<60)return s+'s'; const m=Math.floor(s/60), r=s%60; return m+'m'+(r?' '+r+'s':''); }
-  function showCurrent(){
-    if(current && active.has(current)){ const a=active.get(current); emit({type:a.tool==='__await'?'approval':'running', name:a.name, tool:a.tool==='__await'?'':a.tool, startTs:a.startTs}); }
-    else emit({type:'idle'});
+  /* ── the ONE renderer: Discord shows only HOW MANY agents are working ── */
+  let runSince=0;                     // when the current run-streak began (for the timer)
+  function render(){
+    const n=active.size;
+    if(n){ if(!runSince) runSince=Date.now(); push('Workspace', n+' agent'+(n>1?'s':'')+' working', runSince); }
+    else { runSince=0; push('Workspace', 'Idle'); }   // nothing running → back to Idle (no "ready")
   }
 
-  /* ── agent lifecycle hooks (called from the agents engine) ── */
-  function agentStart(a){ if(!a)return; if(doneTimer){clearTimeout(doneTimer);doneTimer=null;} active.set(a.id,{name:a.name||'agent',startTs:a.startedAt||Date.now(),tool:''}); current=a.id; showCurrent(); }
-  function agentTool(a,tool){ if(!a||!active.has(a.id))return; active.get(a.id).tool=tool||''; current=a.id; showCurrent(); }
-  function agentApproval(a){ if(!a||!active.has(a.id))return; active.get(a.id).tool='__await'; current=a.id; showCurrent(); }
-  function agentRunning(a){ if(!a||!active.has(a.id))return; if(active.get(a.id).tool==='__await')active.get(a.id).tool=''; current=a.id; showCurrent(); }
-  function agentDone(a){
-    if(!a)return;
-    const info=active.get(a.id); active.delete(a.id);
-    const dur=a.startedAt?fmtDur((a.endedAt||Date.now())-a.startedAt):'?';
-    const cost=(a.cost!=null)?(Math.round(a.cost*10000)/10000):0;
-    if(active.size){ // another agent still running — show it
-      current=active.keys().next().value; showCurrent();
-    } else {
-      current=null;
-      emit({type:'done', name:(info&&info.name)||a.name||'agent', duration:dur, cost:cost});
-      if(doneTimer)clearTimeout(doneTimer);
-      doneTimer=setTimeout(()=>{ doneTimer=null; if(!active.size) emit({type:'idle'}); }, 30000); // done shown 30s, then idle
-    }
-  }
+  /* ── agent lifecycle hooks — presence just reflects the live count ── */
+  function agentStart(a){ if(!a||active.has(a.id))return; active.set(a.id, true); render(); }
+  function agentTool(){ render(); }          // no tool specifics
+  function agentApproval(){ render(); }      // no "waiting" specifics — still counts as working
+  function agentRunning(){ render(); }
+  function agentDone(a){ if(!a)return; active.delete(a.id); render(); }
 
-  /* ── voice hook (called from the Voice card's setState; appearance untouched) ── */
+  /* ── voice hook (Voice card appearance untouched) ── */
   let voiceOn=false;
   function voiceState(state){
-    if(state==='recording'){ voiceOn=true; emit({type:'voice'}); }
-    else if(voiceOn){ voiceOn=false; showCurrent(); } // revert to agent state or idle
+    if(state==='recording'){ voiceOn=true; push('Workspace','Listening…'); }
+    else if(voiceOn){ voiceOn=false; render(); }
   }
 
-  /* ── test button ── */
+  /* ── test button — shows a sample count, then reverts to Idle ── */
   async function test(){
     const ap=document.getElementById('discord-appid'); const id=(ap?ap.value:store.appId||'').trim();
     if(!id){ if(typeof toast==='function')toast('Enter your Discord Application ID first','var(--coral)'); return; }
     store.appId=id; store.enabled=true; persist();
     const ok=await start();
-    emit({type:'running', name:'Test agent', tool:'web_search', startTs:Date.now()});
+    push('Workspace','1 agent working', Date.now());
     if(typeof toast==='function')toast(ok?'Sent a test presence to Discord':'Sidecar could not start — check Node',ok?'var(--teal)':'var(--coral)');
-    setTimeout(()=>{ if(!active.size) emit({type:'idle'}); }, 8000);
+    setTimeout(()=>{ if(!active.size) render(); }, 8000);
   }
 
   let _subbed=false;
@@ -7968,8 +8035,17 @@ window.kiteDiscord = (function(){
       await window.kiteListen('mcp-stdout', e=>{
         const p=e&&e.payload; if(!p||p.id!==SRV_ID||!p.line) return;
         let m; try{ m=JSON.parse(p.line); }catch{ return; }
-        if(m && m._kite_discord==='connected') setStatus('connected to Discord','var(--teal)');
-        else if(m && m._kite_discord==='waiting') setStatus('waiting for Discord…','var(--amber)');
+        if(m && m._kite_discord==='connected'){ setStatus('connected to Discord','var(--teal)'); logLine('connected to Discord — presence is live'); }
+        else if(m && m._kite_discord==='waiting'){ setStatus('waiting for Discord…','var(--amber)'); logLine('lost Discord — retrying'); }
+      });
+      await window.kiteListen('mcp-stderr', e=>{
+        const p=e&&e.payload; if(!p||p.id!==SRV_ID||!p.line) return;
+        logLine(String(p.line).replace(/^\[discord-rpc\]\s*/,''));
+      });
+      await window.kiteListen('mcp-exit', e=>{
+        if(!e||e.payload!==SRV_ID) return;
+        running=false; setStatus('sidecar exited','var(--coral)');
+        logLine('sidecar process exited — is Node on PATH? (it runs: node '+SIDE_PATH+')');
       });
       _subbed=true;
     }catch(_){}

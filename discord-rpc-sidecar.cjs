@@ -62,27 +62,25 @@ function send(op, data){
   catch(e){ err('write failed: ' + e.message); }
 }
 
-/* ── activity builders (Discord presence payloads) ── */
-function baseAssets(){ return { large_image: 'kite', large_text: 'Kite' }; }
+/* ── activity builders (Discord presence payloads) ──
+   NOTE: no `assets` are sent. Discord silently drops an activity that names an
+   image key that isn't uploaded to the app, so we stay text-only (guaranteed to
+   render). Add assets back only once a logo asset named e.g. "kite" exists. */
 function idleActivity(){
-  return { details: 'AI Terminal', state: 'Idle', assets: baseAssets(), instance: false };
+  return { details: 'Workspace', state: 'Idle', instance: false };
 }
 function buildActivity(ev){
-  const a = { assets: baseAssets(), instance: false };
+  const a = { instance: false };
   switch (ev.type){
     case 'running':
       a.details = 'Running agent: ' + clip(ev.name || 'agent', 118);
       a.state = clip(ev.tool ? String(ev.tool) : 'Working…', 128);
       if (ev.startTs) a.timestamps = { start: Math.floor(ev.startTs) };
-      a.assets.small_image = 'running';
-      a.assets.small_text = 'Running';
       break;
     case 'approval':
       a.details = 'Running agent: ' + clip(ev.name || 'agent', 118);
       a.state = 'Waiting for approval…';
       if (ev.startTs) a.timestamps = { start: Math.floor(ev.startTs) };
-      a.assets.small_image = 'approval';
-      a.assets.small_text = 'Waiting';
       break;
     case 'done':
       a.details = 'Agent complete: ' + clip(ev.name || 'agent', 118);
@@ -91,13 +89,17 @@ function buildActivity(ev){
     case 'voice':
       a.details = 'Kite Voice';
       a.state = 'Listening…';
-      a.assets.small_image = 'running';
-      a.assets.small_text = 'Listening';
       break;
     case 'idle':
     default:
-      return idleActivity();
+      a.details = 'Workspace';
+      a.state = 'Idle';
+      break;
   }
+  // JS may drive the presence directly (type:"custom" with details/state/startTs).
+  if (ev.details) a.details = clip(ev.details, 128);
+  if (ev.state) a.state = clip(ev.state, 128);
+  if (ev.startTs) a.timestamps = { start: Math.floor(ev.startTs) };
   return a;
 }
 function clip(s, n){ s = String(s == null ? '' : s); return s.length > n ? s.slice(0, n - 1) + '…' : (s || ' '); }
