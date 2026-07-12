@@ -97,7 +97,10 @@
       "Bash(rm -f scratch_d.js)",
       "Bash(timeout 3 node discord-rpc-sidecar.cjs 123456789012345678)",
       "Bash(awk '/DISCORD RICH PRESENCE \\\\\\(sidecar bridge\\\\\\)/,/^<\\\\/script>/' src/index.html)",
-      "Bash(awk 'NR>=1717 && NR<=1720' src/index.html)"
+      "Bash(awk 'NR>=1717 && NR<=1720' src/index.html)",
+      "Bash(awk -F: '$1>7852 && $1<8065')",
+      "Bash(awk -F: '$1>8065 && $1<8230')",
+      "Bash(awk -F: '$1>4560 && $1<4760')"
     ]
   }
 }
