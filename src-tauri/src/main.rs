@@ -1149,6 +1149,263 @@ fn mcp_claude_config() -> Result<String, String> {
     std::fs::read_to_string(&path).map_err(|e| e.to_string())
 }
 
+// ─────────────────────────── AGENT FILE + DATA TOOLS ───────────────────────────
+// Extra file/system tools for the expanded agent toolset. Every path is
+// PathGuarded to the agent's working directory (same guarantee as
+// agent_file_read/write). Mutating tools (append/delete/move/zip/unzip) are
+// gated behind the frontend approval flow before they reach here.
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct FileListReq {
+    cwd: String,
+    #[serde(default)]
+    path: String,
+}
+
+/// List a directory's immediate children (dirs first, then files with sizes).
+#[tauri::command]
+fn agent_file_list(req: FileListReq) -> Result<String, String> {
+    let target = if req.path.trim().is_empty() { ".".to_string() } else { req.path.clone() };
+    let p = guard_path(&req.cwd, &target, true)?;
+    let meta = std::fs::metadata(&p).map_err(|e| e.to_string())?;
+    if !meta.is_dir() {
+        return Err(format!("{} is not a directory", target));
+    }
+    let mut dirs: Vec<String> = Vec::new();
+    let mut files: Vec<String> = Vec::new();
+    for entry in std::fs::read_dir(&p).map_err(|e| e.to_string())? {
+        let entry = match entry { Ok(e) => e, Err(_) => continue };
+        let name = entry.file_name().to_string_lossy().to_string();
+        match entry.metadata() {
+            Ok(m) if m.is_dir() => dirs.push(format!("{}/", name)),
+            Ok(m) => {
+                let sz = m.len();
+                let human = if sz >= 1_048_576 { format!("{:.1} MB", sz as f64 / 1_048_576.0) }
+                    else if sz >= 1024 { format!("{:.1} KB", sz as f64 / 1024.0) }
+                    else { format!("{} B", sz) };
+                files.push(format!("{}  ({})", name, human));
+            }
+            Err(_) => files.push(name),
+        }
+    }
+    dirs.sort();
+    files.sort();
+    let mut out = dirs;
+    out.extend(files);
+    if out.is_empty() { return Ok("(empty directory)".into()); }
+    Ok(out.join("\n"))
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct FileSearchReq {
+    cwd: String,
+    #[serde(default)]
+    dir: String,
+    pattern: String,
+}
+
+/// Simple case-insensitive filename search under `dir` (recursive, capped at
+/// 200 hits). `pattern` supports `*` wildcards, e.g. "*.py" or "report*".
+#[tauri::command]
+fn agent_file_search(req: FileSearchReq) -> Result<String, String> {
+    let base_rel = if req.dir.trim().is_empty() { ".".to_string() } else { req.dir.clone() };
+    let root = guard_path(&req.cwd, &base_rel, true)?;
+    let pat = req.pattern.to_lowercase();
+    // Build the literal fragments a `*`-glob must contain, in order.
+    let parts: Vec<String> = pat.split('*').map(|s| s.to_string()).collect();
+    let matches = |name: &str| -> bool {
+        let n = name.to_lowercase();
+        if !pat.contains('*') { return n.contains(&pat); }
+        let mut idx = 0usize;
+        for (i, frag) in parts.iter().enumerate() {
+            if frag.is_empty() { continue; }
+            match n[idx..].find(frag.as_str()) {
+                Some(pos) => {
+                    // first fragment with no leading '*' must anchor at start
+                    if i == 0 && pos != 0 { return false; }
+                    idx += pos + frag.len();
+                }
+                None => return false,
+            }
+        }
+        // trailing fragment with no '*' after it must anchor at end
+        if let Some(last) = parts.last() {
+            if !last.is_empty() && !n.ends_with(last.as_str()) { return false; }
+        }
+        true
+    };
+    let mut hits: Vec<String> = Vec::new();
+    for entry in walkdir::WalkDir::new(&root).max_depth(12).into_iter().filter_map(|e| e.ok()) {
+        if hits.len() >= 200 { break; }
+        if !entry.file_type().is_file() { continue; }
+        let name = entry.file_name().to_string_lossy().to_string();
+        if matches(&name) {
+            let rel = entry.path().strip_prefix(&root).unwrap_or(entry.path());
+            hits.push(rel.to_string_lossy().replace('\\', "/"));
+        }
+    }
+    if hits.is_empty() { return Ok(format!("(no files matching \"{}\")", req.pattern)); }
+    hits.sort();
+    Ok(hits.join("\n"))
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct FileAppendReq {
+    cwd: String,
+    path: String,
+    content: String,
+}
+
+#[tauri::command]
+fn agent_file_append(req: FileAppendReq) -> Result<String, String> {
+    use std::io::Write;
+    let p = guard_path(&req.cwd, &req.path, false)?;
+    let mut f = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(&p)
+        .map_err(|e| e.to_string())?;
+    f.write_all(req.content.as_bytes()).map_err(|e| e.to_string())?;
+    Ok(format!("appended {} bytes to {}", req.content.len(), p.display()))
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct FilePathReq {
+    cwd: String,
+    path: String,
+}
+
+#[tauri::command]
+fn agent_file_delete(req: FilePathReq) -> Result<String, String> {
+    let p = guard_path(&req.cwd, &req.path, true)?;
+    let meta = std::fs::metadata(&p).map_err(|e| e.to_string())?;
+    if meta.is_dir() {
+        std::fs::remove_dir_all(&p).map_err(|e| e.to_string())?;
+        Ok(format!("deleted directory {}", p.display()))
+    } else {
+        std::fs::remove_file(&p).map_err(|e| e.to_string())?;
+        Ok(format!("deleted {}", p.display()))
+    }
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct FileMoveReq {
+    cwd: String,
+    from: String,
+    to: String,
+}
+
+#[tauri::command]
+fn agent_file_move(req: FileMoveReq) -> Result<String, String> {
+    let src = guard_path(&req.cwd, &req.from, true)?;
+    let dst = guard_path(&req.cwd, &req.to, false)?;
+    std::fs::rename(&src, &dst).map_err(|e| e.to_string())?;
+    Ok(format!("moved {} -> {}", src.display(), dst.display()))
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct FileZipReq {
+    cwd: String,
+    files: Vec<String>,
+    output: String,
+}
+
+/// Create a deflate zip of the listed files (each PathGuarded) at `output`.
+#[tauri::command]
+fn agent_file_zip(req: FileZipReq) -> Result<String, String> {
+    use std::io::Write;
+    if req.files.is_empty() {
+        return Err("no files given to zip".into());
+    }
+    let out = guard_path(&req.cwd, &req.output, false)?;
+    let f = std::fs::File::create(&out).map_err(|e| e.to_string())?;
+    let mut zip = zip::ZipWriter::new(f);
+    let opts: zip::write::FileOptions<()> =
+        zip::write::FileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+    let mut n = 0;
+    for rel in &req.files {
+        let src = guard_path(&req.cwd, rel, true)?;
+        let name = src
+            .file_name()
+            .map(|s| s.to_string_lossy().to_string())
+            .unwrap_or_else(|| rel.clone());
+        let bytes = std::fs::read(&src).map_err(|e| e.to_string())?;
+        zip.start_file(name, opts).map_err(|e| e.to_string())?;
+        zip.write_all(&bytes).map_err(|e| e.to_string())?;
+        n += 1;
+    }
+    zip.finish().map_err(|e| e.to_string())?;
+    Ok(format!("zipped {} file(s) into {}", n, out.display()))
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct FileUnzipReq {
+    cwd: String,
+    path: String,
+    #[serde(default)]
+    dest: String,
+}
+
+/// Extract a zip archive into `dest` (default: alongside the archive).
+#[tauri::command]
+fn agent_file_unzip(req: FileUnzipReq) -> Result<String, String> {
+    let archive = guard_path(&req.cwd, &req.path, true)?;
+    let dest_rel = if req.dest.trim().is_empty() { ".".to_string() } else { req.dest.clone() };
+    let dest = guard_path(&req.cwd, &dest_rel, false)?;
+    std::fs::create_dir_all(&dest).map_err(|e| e.to_string())?;
+    let f = std::fs::File::open(&archive).map_err(|e| e.to_string())?;
+    let mut ar = zip::ZipArchive::new(f).map_err(|e| format!("not a valid zip: {}", e))?;
+    let count = ar.len();
+    ar.extract(&dest).map_err(|e| e.to_string())?;
+    Ok(format!("extracted {} entries into {}", count, dest.display()))
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ParseExcelReq {
+    cwd: String,
+    path: String,
+    #[serde(default)]
+    sheet: String,
+}
+
+/// Read an .xlsx/.xls/.ods sheet and return it as tab-separated rows (capped).
+#[tauri::command]
+fn agent_parse_excel(req: ParseExcelReq) -> Result<String, String> {
+    use calamine::{open_workbook_auto, Reader};
+    let p = guard_path(&req.cwd, &req.path, true)?;
+    let mut wb = open_workbook_auto(&p).map_err(|e| format!("cannot open workbook: {}", e))?;
+    let names = wb.sheet_names().to_vec();
+    if names.is_empty() {
+        return Err("workbook has no sheets".into());
+    }
+    let sheet = if req.sheet.trim().is_empty() { names[0].clone() } else { req.sheet.clone() };
+    let range = wb
+        .worksheet_range(&sheet)
+        .map_err(|e| format!("sheet '{}' not found: {}", sheet, e))?;
+    let mut out = String::new();
+    out.push_str(&format!("Sheet: {}  ({} sheets total)\n", sheet, names.len()));
+    let mut rows = 0;
+    for row in range.rows() {
+        if rows >= 500 {
+            out.push_str("…[truncated at 500 rows]\n");
+            break;
+        }
+        let cells: Vec<String> = row.iter().map(|c| c.to_string()).collect();
+        out.push_str(&cells.join("\t"));
+        out.push('\n');
+        rows += 1;
+    }
+    Ok(out)
+}
+
 fn main() {
     tauri::Builder::default()
         .manage(McpState::default())
@@ -1162,6 +1419,14 @@ fn main() {
             agent_file_write,
             agent_shell_exec,
             agent_run_code,
+            agent_file_list,
+            agent_file_search,
+            agent_file_append,
+            agent_file_delete,
+            agent_file_move,
+            agent_file_zip,
+            agent_file_unzip,
+            agent_parse_excel,
             pick_folder,
             read_dropped_file,
             gmail_list,

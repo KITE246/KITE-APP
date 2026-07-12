@@ -1,367 +1,570 @@
-# KITE — AI-Powered Terminal & Agent Platform
-## CLAUDE.md — Project Brief (read this fully before touching any code)
+KITE — AI Agent Platform
 
----
+CLAUDE.md — Read this fully before touching any code.
 
-## WHAT KITE IS
 
-Kite is a Rust + Tauri 2 desktop app that combines:
-1. A real daily-driver terminal (replaces Windows Terminal)
-2. A parallel AI agent platform with voice control
-3. A connection hub for all your tools and services
+WHAT KITE IS
 
-**The fox logo is at src/assets/logo.png — use it everywhere.**
+Kite is a Rust + Tauri 2 desktop AI agent platform.
+Simple, powerful, focused.
 
----
+Fox logo: src/assets/logo.png — use everywhere.
 
-## WHAT IS ALREADY BUILT (do not break these)
 
-### ✅ CHAT TAB
-- 10+ AI providers streaming (Groq, Gemini, Mistral, Cerebras,
-  OpenRouter, NVIDIA, Cloudflare, GitHub Models, HuggingFace, OpenAI)
-- Key rotation across 4 slots per provider
-- Daily budget tracking and usage charts
-- Markdown rendering with syntax highlighting
-- localStorage persistence for chats and keys
-- Model picker with all providers
+CURRENT STATE (what exists right now)
 
-### ✅ KITE VOICE CARD
-- Floating draggable card (~280px) with fox logo
-- Always on top of everything, snaps to edges
-- Position persisted to localStorage
-- Double-click minimizes to bubble
-- States: idle / recording / transcribing / thinking / speaking / error
-- F9 global hotkey (press to start, press to stop)
-- Recording: click-to-start/click-to-stop (2 second minimum)
-- STT: Groq whisper-large-v3 (cloud, uses existing key rotation)
-  OR local faster-whisper server at http://127.0.0.1:5000
-- Local whisper server: C:\Users\praga\whisper-app\server.py
-  Python: C:\Users\praga\whisper-app\whisper-env\Scripts\python.exe
-  Model: faster-whisper-large-v3-turbo-ct2 (fully offline)
-- On transcript: send to AI for command parsing → execute command
-- TTS: window.speechSynthesis speaks AI response back
-- Animated rings around logo (teal=idle, coral=recording, pulse=speaking)
-- 5 level bars animate to audio levels
-- Mic button in top chrome to open/close card
-- Voice commands work in all tabs (see Voice Everywhere section)
-- After agent finishes: Kite announces result via TTS automatically
+TABS (exactly 5, nothing else):
 
-### ✅ TERMINAL TAB
-- Real PTY via portable-pty crate (ConPTY on Windows)
-- Terminal TABS bar: +new tab, close, Ctrl+Shift+T/W
-- Split panes: split right | split down, max 4 panes
-- Drag borders to resize panes
-- xterm.js + WebGL renderer + fit + search + web-links addons
-- Shell profiles auto-detected: PowerShell 7, Windows PowerShell,
-  CMD, Git Bash, WSL distros
-- Font: Cascadia Code/Consolas, size 14, ligatures
-- 10000 line scrollback, copy-on-select, right-click paste
-- Multi-line paste warning
-- Clickable URLs
-- OSC title updates in tab labels
-- Status bar: cwd, shell name, ConPTY indicator
-- Right-click context menu: Copy/Paste/Clear/Split/Close/Send to AI
-- Toolbar: [+ New Tab ▾] [Split Right |] [Split Down -] [Clear]
-- Kill all PTYs on app exit (no orphans)
-- Layout persisted to localStorage
 
-### ✅ AGENTS TAB
-- Sessions list (left 280px): status dot, name, task, engine badge,
-  model, cost, cancel button, subagents indented under parent
-- New Agent form: name, task, engine, model, cwd, tools, budget
-- Agent detail (right): activity stream, approval blocks, message input
-- Engine options: API | Local | OpenCode | Coordinator
-- Agent loop: JS ReAct loop using existing provider chain
-- Built-in tools:
-  * web_fetch(url) — GET request, returns text (auto)
-  * file_read(path) — PathGuard scoped to cwd (auto)
-  * file_write(path, content) — writes file (ask approval)
-  * shell_exec(command) — runs in cwd, 45s timeout (ask approval)
-    Windows: PowerShell commands → temp .ps1 file
-    Simple commands → cmd /c
-  * spawn_subagent(name, goal, engine?, model?) — child agent (auto)
-    depth ≤ 2, max 8 concurrent
-  * screenshot_url(url) — Puppeteer screenshot (ask)
-  * run_code(language, code) — Python/JS/PS live execution (ask)
-  * save_artifact(name, content, type) — saves output file
-- Approval flow: agent pauses → inline [Approve][Deny] in stream
-- Budget: max iterations(20), max tokens, max cost, wall clock
-- Activity stream: markdown rendered, code highlighted, images inline
-- Token/cost ticker in pane header
-- Artifacts panel: files created, screenshots, code written
-- Agent badge in top chrome: "● N agents live"
-- Subagents auto-open new panes, tinted under parent
-- After completion: TTS announces result automatically
+Chat
+Agents
+Connections
+MCP
+API Keys
 
-### ✅ COORDINATOR AGENT
-- Engine: Coordinator
-- Step 1: Analyzes big goal → breaks into parallel subtasks
-- Step 2: Spawns worker agents in parallel (join_all)
-- Step 3: Monitors all workers with live dashboard
-- Step 4: Synthesizes all results into final output + TTS summary
-- Max workers: 2-8 (slider)
-- Worker model can differ from coordinator model
 
-### ✅ CONNECTIONS TAB
-- Card grid with real logos via cdn.simpleicons.org
-- Connected services: GitHub, Gmail, Google Drive, Notion,
-  Cloudflare, Linear, Vercel, Figma, Supabase
-- Additional: Discord, Twitter/X, Reddit, YouTube, OpenAI
-- API key storage: localStorage encrypted (btoa)
-- Shows last4 chars after saving
-- Test button per connection
-- Read tools: auto-approved
-- Write tools: always ask approval
-- Tool namespacing: conn__{service}__{tool}
-- GitHub tools: list_repos, list_prs, list_issues, get_file,
-  create_issue, search
-- Gmail tools: list_emails, search, read_email, send [approval]
-- Drive tools: list_files, search, read_file, create_file [approval]
-- Notion tools: list_pages, search, read_page, create/update [approval]
-- Cloudflare: list_zones, dns_records, analytics, purge [approval]
-- Linear: list_issues, my_issues, projects, create [approval]
-- Vercel: list_projects, deployments, logs, redeploy [approval]
-- Figma: list_files, get_file, comments, export_node
-- Supabase: list_tables, query [approval], functions, logs
-- Web Search (DuckDuckGo, always available, no key)
+REMOVED (do not add back):
 
-### ✅ MCP TAB
-- Built-in servers (toggle to enable):
-  * Memory (@modelcontextprotocol/server-memory) — 9 tools
-  * Sequential Thinking — 1 tool
-  * Filesystem (@modelcontextprotocol/server-filesystem)
-  * Fetch (@modelcontextprotocol/server-fetch)
-  * Puppeteer (@modelcontextprotocol/server-puppeteer)
-  * Playwright (@playwright/mcp)
-  * Exa Search (needs EXA_API_KEY)
-  * Firecrawl (needs FIRECRAWL_API_KEY)
-  * Context7 (@upstash/context7-mcp)
-  * Chrome DevTools
-  * Brave Search (needs BRAVE_API_KEY)
-  * Git MCP (@modelcontextprotocol/server-git)
-  * Terminal/Shell MCP
-  * Knowledge Graph MCP
-  * SQLite MCP (needs db path)
-  * PDF MCP
-- Custom servers: add your own (stdio or HTTP)
-- Import from Claude Desktop config
-  Path: C:\Users\praga\AppData\Roaming\Claude\claude_desktop_config.json
-- MCP client: JSON-RPC over stdio (spawn via Tauri shell)
-- Tool namespacing: mcp__{server}__{tool}
-- Auto-restart on crash (max 3 times)
-- Always-allow toggle per server
-- Tool browser per server
 
----
+Terminal tab
+Projects view
+Workflow canvas
+PTY / xterm.js code
 
-## WHAT WE ARE BUILDING IN DAY 5
 
-### 1. HEY KITE — WAKE WORD
-- Always-on background mic listener
-- Detects "Hey Kite" → activates voice card automatically
-- Implementation: continuous recording, chunk every 1s,
-  send to Groq whisper for keyword detection
-- Visual: small pulsing dot in status bar when listening
-- "Hey Kite stop" / "Hey Kite cancel" → cancels current agent
-- Settings: On/Off toggle, sensitivity slider
 
-### 2. VOICE EVERYWHERE
-Full voice command system across all tabs:
+WHAT IS BUILT AND WORKING
 
-CHAT: send message, new chat, clear, switch model, summarize
-AGENTS: new agent [task], cancel [name], status, use [mcp] and [task],
-        run coordinator on [task], approve, deny
-TERMINAL: run [command], explain this, fix this error, new terminal,
-          cd to [folder]
-MCP: enable [server], use [tool]
-NAVIGATION: go to [tab], open settings, show projects
-KITE SPEAKS BACK: confirms every command, announces completions,
-                  suggests corrections
+CHAT TAB
 
-Voice parser: send transcript to AI → get JSON command → execute
-System: {action, target, params, context}
 
-Example: "Hey Kite use firecrawl mcp and scrape nvidia website"
-→ parser returns: {action: "new_agent", params: {task: "scrape nvidia 
-  website", tools: ["mcp__firecrawl__scrape"]}}
-→ creates + starts agent automatically
+10+ AI providers streaming
+Groq, Gemini, Mistral, Cerebras, OpenRouter, NVIDIA,
+Cloudflare, GitHub Models, HuggingFace, OpenAI, Anthropic
+Key rotation across 4 slots per provider
+Daily budget tracking and usage charts
+Markdown rendering with syntax highlighting
+localStorage persistence
+Model picker
 
-### 3. AGENT SCREENSHOTS
-- screenshot_url(url) via Puppeteer MCP
-- Renders screenshot inline in activity stream
-- Vision analysis if model supports it (Claude/GPT-4V/Gemini)
-- page_click, page_extract, page_fill [approval], page_wait_and_extract
 
-### 4. CODE INTERPRETER
-- run_code(language, code) tool
-- Languages: Python, JavaScript/Node, PowerShell, Shell
-- Write to temp file → execute → capture output → stream live
-- Code blocks with syntax highlighting in activity stream
-- 30 second timeout, configurable
+KITE VOICE CARD
 
-### 5. DRAG AND DROP FILES
-- Global drag-drop handler across entire app
-- Drop on CHAT → reads content, adds as context
-  (PDF via PDF MCP, images as vision input)
-- Drop on AGENT → adds to working context
-- Drop on TERMINAL → cat/run file
-- Drop on CONNECTIONS → import tokens JSON
-- Teal dashed border on valid drop targets
-- "Drop to add to [context]" tooltip while hovering
 
-### 6. PROJECTS VIEW
-Left sidebar has two sections: PROJECTS (top) + RECENT (bottom)
-Project = { name, color, icon, chats[], agents[], terminals[],
-            files[], notes (markdown), created_at }
-- Create project from current session
-- Inside project: sidebar (chats, agents, terminals, files) +
-  main content + project notes panel
-- Templates: Web Scraping, Code Review, Research, Custom
-- Export project as markdown
-- Archive completed projects
+Floating draggable card with fox logo
+Always on top, snaps to edges, position persisted
+Double-click minimizes to bubble
+States: idle / recording / transcribing / thinking / speaking / error
+F9 global hotkey
+Click to start / click to stop recording
+STT: Groq whisper-large-v3 OR local faster-whisper
+Local server: C:\Users\praga\whisper-app\server.py
+Python: C:\Users\praga\whisper-app\whisper-env\Scripts\python.exe
+TTS: Gemini 2.5 Flash TTS with 4 key rotation OR speechSynthesis fallback
+Animated rings, level bars
+Voice commands parsed by AI and executed
+After agent finishes: TTS announces result
+Wake word: "Hey Kite"
 
-### 7. AGENT MEMORY
-- Before each run: query Memory MCP for relevant context
-- Inject memories into system prompt
-- After completion: save key facts to Memory MCP
-- Memory types: Facts, Preferences, Patterns, Projects
-- Memory browser in MCP tab
 
-### 8. SMART TERMINAL
-- AI autocomplete: ghost text suggestions as you type
-  (Groq llama3 for speed, Tab to accept)
-- Fix error button: coral "⚡ Fix this?" on failed commands
-- Explain output: right click → "Explain this" popup
-- AI history search: Ctrl+R → describe command in English
+AGENTS TAB
 
-### 9. ENHANCED ACTIVITY STREAM
-- Markdown rendered (headers, bold, lists, tables)
-- Code blocks with syntax highlighting + copy button
-- Images inline (screenshots)
-- Artifacts panel: files, screenshots, code
-- Agent timeline (right side): visual step tracker
-- Performance metrics: tokens/sec, cost breakdown, timing
 
----
+Sessions list: status, name, task, engine, model, cost
+New Agent form: name, goal, engine, model, tools, budget
+Agent detail: activity stream, approvals, message input
+JS ReAct loop using existing provider chain
+Basic tools: web_fetch, file_read, file_write, shell_exec, spawn_subagent
+Approval flow: inline Approve/Deny
+Budget: max iterations, tokens, cost
+Subagents indented under parent
+TTS announces completion
 
-## UPCOMING (DAY 6)
 
-### MODELS TAB
-- Provider management dashboard
-- All cloud providers + local Ollama/LM Studio
-- Usage bars, cost tracking, model lists
-- Global model picker used everywhere
+CONNECTIONS TAB
 
-### SETTINGS PAGE
-- General, Voice, Agents, Terminal, Connections, Storage, About
 
-### SYSTEM TRAY
-- Fox logo in tray
-- Right-click menu: Show/New Chat/New Agent/New Terminal/Quit
-- Badge when agents running
+GitHub (tested working)
+Gmail, Google Drive, Notion, Cloudflare, Linear,
+Vercel, Figma, Supabase, Discord, Twitter, Reddit, YouTube
+Real logos via cdn.simpleicons.org
+localStorage token storage
+Read: auto | Write: approval
 
-### COMMAND PALETTE (Ctrl+K)
-- Fuzzy search all commands
-- Keyboard navigable
 
-### PACKAGING
-- Windows NSIS installer (.exe)
-- App icon from fox logo
-- Version 1.0.0
+MCP TAB
 
----
 
-## ENGINEERING RULES (never break these)
+Memory (running, tested working)
+Sequential Thinking (running, tested working)
+Filesystem, Fetch, Puppeteer, Playwright
+Exa, Firecrawl, Context7, Chrome DevTools
+Brave Search, Git, Shell, SQLite, PDF
+Custom server add form
+Claude Desktop config import
 
-### ARCHITECTURE
-- Tauri 2 + Vite vanilla ES modules (no framework)
-- Rust backend: tokio async, thiserror, tracing
-- Frontend: ES modules, marked+dompurify, highlight.js, xterm.js
-- Storage: localStorage for all data (no SQLite yet)
-- Keys: localStorage btoa encoded (keychain in v2)
 
-### THE UNTOUCHABLE RULE
-Chat tab, Voice card, Terminal tab, Agents tab, Connections tab,
-MCP tab — ALL existing features stay 100% untouched.
-New features are self-contained: own CSS block, own script section,
-own Rust commands appended before main().
 
-### CODE STYLE
-- New Rust commands: append before main(), register in handler
-- New JS: own <script> module, can access shared globals
-- New CSS: own block with clear comment header
-- API keys never logged or exposed
-- PathGuard: file tools always scoped to working directory
+WHAT WE ARE BUILDING NOW
 
-### PATHS (Windows, user is "praga")
-- App: C:\Users\praga\KITE-APP
-- Whisper: C:\Users\praga\whisper-app\server.py
-- Whisper Python: C:\Users\praga\whisper-app\whisper-env\Scripts\python.exe
-- Whisper model: faster-whisper-large-v3-turbo-ct2
+GOAL: Make the agent able to do ANYTHING.
 
-### PROVIDERS AVAILABLE
-Groq (key saved), Gemini, Mistral, Cerebras, OpenRouter,
-NVIDIA NIM, Cloudflare Workers AI, GitHub Models, HuggingFace,
-OpenAI, Anthropic, Ollama (local), LM Studio (local)
 
-### VOICE PIPELINE
-1. Wake word OR F9/mic button
-2. Record (click start → click stop, min 2 seconds)
-3. POST to http://127.0.0.1:5000/transcribe (local whisper first)
-   OR Groq /openai/v1/audio/transcriptions (fallback)
-4. Send transcript to AI voice parser → get JSON command
-5. Execute command in current context
-6. Speak confirmation via window.speechSynthesis
-7. After agent done: announce result automatically
+1. AGENT TOOLS — FULL EXPANSION
 
-### MCP SERVERS
-- Spawn via Tauri shell as sidecar processes
-- JSON-RPC over stdio (initialize → tools/list → tools/call)
-- Auto-restart on crash max 3 times
-- Kill all on app exit
+WEB & RESEARCH:
 
-### AGENT LOOP (JS)
-- ReAct pattern: think → tool call → observe → repeat
-- Uses existing kiteAsk() / provider chain
-- Parallel tool calls within one turn (Promise.all)
-- Budget: check before every iteration
-- Events: emit to activity stream in real time
-- Approval: pause → show UI → resolve → continue
 
-### STYLING
-- CSS vars: --bg, --surface, --teal, --coral, --text, --dim
-- Fonts: Inter (UI), Space Mono (code/terminal)
-- Dark default, light mode toggle
-- Teal (#00d4aa) for active/success states
-- Coral (#ff6b6b) for errors/warnings/recording
-- All logos: cdn.simpleicons.org/{name}/{color}
-- Consistent: 8px border radius, subtle shadows, smooth transitions
+web_fetch(url) — already exists
+web_search(query) — DuckDuckGo top 10
+web_screenshot(url) — Puppeteer MCP
+web_scrape(url, selector?) — extract elements
+web_monitor(url, interval_mins) — watch changes
 
----
 
-## TESTING CHECKLIST (verify after each feature)
+FILES & SYSTEM:
 
-- [ ] Chat still streams replies
-- [ ] API keys tab saves/loads keys
-- [ ] Terminal opens PowerShell, commands work
-- [ ] Agent runs and completes a web fetch task
-- [ ] Voice card appears, records, transcribes
-- [ ] No console errors on boot
-- [ ] All tabs switch correctly
-- [ ] Voice command "Hey Kite" activates card
-- [ ] Coordinator spawns worker agents in parallel
-- [ ] Screenshot tool works in agent
-- [ ] Drag + drop file into chat adds context
-- [ ] Projects view shows/creates projects
 
----
+file_read, file_write [approval] — already exist
+file_append(path, content) [approval]
+file_delete(path) [approval]
+file_list(dir)
+file_search(dir, pattern)
+file_move(from, to) [approval]
+file_zip(files[], output)
+file_unzip(path, dest)
 
-## CURRENT STATUS
 
-Day 1 ✅ — Tauri wrap + Kite Voice card
-Day 2 ✅ — Real terminal (PTY, tabs, splits)
-Day 3 ✅ — Agents (parallel, subagents, tools, voice)
-Day 4 ✅ — Connections (GitHub working) + MCP (Memory + SeqThinking)
-Day 5 🔄 — Voice everywhere, Coordinator, Screenshots, Code interpreter,
-            Drag-drop, Projects, Memory, Smart terminal
-Day 6 📋 — Models tab, Settings, Tray, Command palette, Package
+CODE EXECUTION:
+
+
+run_python(code, packages[]?) — auto pip install
+run_javascript(code) — Node.js
+run_powershell(script) [approval]
+run_command(cmd, cwd?) [approval]
+
+
+DATA & ANALYSIS:
+
+
+parse_csv(path)
+parse_json(path)
+parse_pdf(path) — via PDF MCP
+parse_excel(path)
+generate_chart(data, type, title) — returns PNG inline
+
+
+MEMORY & KNOWLEDGE:
+
+
+memory_save(key, value) — Memory MCP
+memory_recall(query)
+memory_list()
+note_create(title, content)
+note_search(query)
+
+
+AI & GENERATION:
+
+
+ai_call(prompt, model?)
+ai_summarize(text, length?)
+ai_translate(text, language)
+ai_extract(text, schema)
+ai_classify(text, categories[])
+ai_image_analyze(image_path)
+ai_generate_report(data, template?)
+
+
+COMMUNICATION (via Connections):
+
+
+email_send(to, subject, body) [approval]
+email_read(count?, query?)
+discord_send(channel_id, message) [approval]
+discord_read(channel_id, count)
+slack_send(channel, message) [approval]
+slack_read(channel, count)
+github_create_issue(repo, title, body) [approval]
+github_create_pr(repo, title, body, branch) [approval]
+notion_create_page(title, content) [approval]
+linear_create_issue(title, body) [approval]
+twitter_post(text) [approval]
+telegram_send(chat_id, text) [approval]
+
+
+PRODUCTIVITY:
+
+
+calendar_read(days?)
+calendar_create(title, time, duration) [approval]
+sheets_read(id, range)
+sheets_write(id, range, data) [approval]
+airtable_list(base, table)
+airtable_create(base, table, fields) [approval]
+stripe_get_balance()
+stripe_list_payments(count)
+stripe_get_revenue(period)
+
+
+CREATIVE:
+
+
+image_generate(prompt, model?) — Replicate MCP, shown inline
+document_create(title, content, format)
+
+
+
+2. AGENT ACTIVITY STREAM — VISUAL OVERHAUL
+
+No emojis. Clean text badges:
+
+[THINKING] — dim italic
+[TOOL] — teal pill, tool name + condensed args
+[RESULT] — dark bg, dim text
+[APPROVAL] — coral card, Approve/Deny buttons
+[SUBAGENT] — indented, purple left border
+[IMAGE] — inline image max 400px
+[CODE] — syntax highlighted + copy button
+[FILE] — file card: name, size, preview
+[CHART] — inline chart
+[DONE] — teal, task complete + summary
+[ERROR] — coral, message + Retry button
+
+Rich content:
+
+
+Tables → HTML tables
+JSON → pretty printed
+Markdown → fully rendered
+Images → inline
+Code → language label + copy
+Timestamps on every step (HH:MM:SS)
+Collapsible tool call blocks
+Retry button on failed steps
+
+
+
+3. AGENT PRESETS
+
+Horizontal scroll row top of Agents tab.
+Clean cards, no emojis, service icon + name.
+
+"Research Anything" — web_search + web_fetch + ai_summarize + file_write
+"Scrape and Analyze" — web_scrape + parse_csv + run_python + generate_chart
+"Email Assistant" — email_read + ai_summarize + email_send
+"GitHub Assistant" — github tools + ai_call
+"Daily Briefing" — web_search + email_read + calendar_read + discord_send
+"Image Generator" — image_generate + file_write
+"Data Analyst" — file_read + parse_csv + run_python + generate_chart
+"Code Assistant" — run_python + run_javascript + file_read + file_write
+"Stripe Dashboard" — stripe_get_balance + stripe_list_payments + generate_chart
+"Social Monitor" — twitter + reddit + web_search
+
+Each preset card:
+
+
+Name
+Short description (one line)
+Tool count badge
+Click: opens New Agent form pre-filled
+
+
+
+4. NEW AGENT FORM — TOOL CARDS
+
+Replace plain checkboxes with tool cards.
+
+BUILT-IN TOOLS — 2 column card grid:
+Each card: tool name (bold) + description + AUTO/ASK badge + toggle
+
+CONNECTIONS section — expandable cards:
+
+
+Real logo + service name + tool count
+Master toggle (all tools)
+Expand → individual tool toggles
+Disconnected = greyed + Connect button
+
+
+MCP SERVERS section — expandable cards:
+
+
+Server name + tool count + status dot
+Master toggle
+Expand → individual tool toggles
+Stopped = greyed + Start button
+
+
+Style: teal left border when enabled, smooth toggles
+
+
+5. AGENT SESSIONS LIST
+
+Group by status:
+RUNNING (teal header)
+WAITING APPROVAL (amber header)
+DONE TODAY (green header)
+OLDER (dim header)
+
+Each card:
+
+
+Status dot (pulse when running)
+Agent name bold
+Task preview 1 line
+Engine badge: API / LOCAL / AUTO
+Model name dim
+Live cost (updates every 5s)
+Progress bar toward budget
+Elapsed time
+Cancel X button (running only)
+
+
+Subagents:
+
+
+Indented 16px
+Smaller card
+Left border line connecting to parent
+
+
+
+6. NEW CONNECTIONS
+
+Google Calendar — cdn.simpleicons.org/googlecalendar/4285F4
+
+
+calendar_list_events, calendar_create_event [approval],
+calendar_find_free_time, calendar_delete_event [approval]
+
+
+Google Sheets — cdn.simpleicons.org/googlesheets/34A853
+
+
+sheets_read, sheets_write [approval], sheets_append [approval]
+
+
+Airtable — cdn.simpleicons.org/airtable/18BFFF
+
+
+list_records, create_record [approval], update_record [approval]
+
+
+Trello — cdn.simpleicons.org/trello/0052CC
+
+
+list_boards, list_cards, create_card [approval], move_card [approval]
+
+
+Telegram — cdn.simpleicons.org/telegram/26A5E4
+
+
+send_message [approval], get_updates
+
+
+Stripe — cdn.simpleicons.org/stripe/635BFF
+
+
+get_balance, list_payments, get_revenue,
+list_customers, create_payment_link [approval]
+
+
+Spotify — cdn.simpleicons.org/spotify/1DB954
+
+
+now_playing, recently_played, search, play [approval]
+
+
+PostHog — cdn.simpleicons.org/posthog/F54E00
+
+
+get_events, get_insights, list_feature_flags
+
+
+Railway — cdn.simpleicons.org/railway/0B0D0E
+
+
+list_projects, list_deployments, get_logs, redeploy [approval]
+
+
+WhatsApp Business — cdn.simpleicons.org/whatsapp/25D366
+
+
+send_message [approval]
+
+
+Connections UI additions:
+
+
+Category filter: All | Productivity | Communication | Development | Analytics | Media
+Search bar
+"N of M connected" pill
+Sort: connected first
+
+
+
+7. NEW MCP SERVERS
+
+Perplexity Search — needs PERPLEXITY_API_KEY
+command: npx -y @modelcontextprotocol/server-perplexity
+Tools: search, search_with_sources
+
+Docker — no key
+command: npx -y @modelcontextprotocol/server-docker
+Tools: list_containers, start [approval], stop [approval], get_logs, list_images
+
+Obsidian — needs vault path
+command: npx -y @modelcontextprotocol/server-obsidian
+Tools: read_note, create_note, search_notes, list_notes
+
+Image Generation (Replicate) — needs REPLICATE_API_KEY
+command: npx -y @modelcontextprotocol/server-replicate
+Tools: generate_image, list_models
+
+Maps — needs GOOGLE_MAPS_KEY
+command: npx -y @modelcontextprotocol/server-maps
+Tools: geocode, reverse_geocode, directions, places_search
+
+Weather — needs OPENWEATHER_API_KEY (free)
+command: npx -y @modelcontextprotocol/server-weather
+Tools: current_weather, forecast, weather_alerts
+
+Crypto — no key
+command: npx -y @modelcontextprotocol/server-crypto
+Tools: get_price, get_trending, get_news
+
+AWS — needs ACCESS_KEY + SECRET_KEY
+command: npx -y @modelcontextprotocol/server-aws
+Tools: list_s3_buckets, list_ec2_instances, get_cloudwatch_metrics
+
+Excel/Office — no key
+command: npx -y @modelcontextprotocol/server-office
+Tools: read_excel, write_excel, read_word, create_word, create_powerpoint
+
+
+8. DISCORD RICH PRESENCE
+
+Show Kite activity on Discord profile.
+
+States:
+
+
+Idle: Details "Kite AI" / State "Ready"
+Running: Details "Running: [name]" / State "[tool] — [elapsed]"
+Approval: State "Waiting for approval..."
+Done (30s): Details "Completed: [name]" / State "Done in [time] — $[cost]"
+Voice: State "Listening..."
+
+
+Implementation:
+Node.js sidecar (discord-rpc-sidecar.js):
+
+
+npm package: discord-rpc
+Reads JSON events from stdin
+Updates Discord presence
+Silent fail if Discord closed
+Retry every 30s
+
+
+Tauri spawns on startup, sends events via shell stdin.
+Event: {type, name, tool, elapsed, cost}
+
+Settings section "Discord":
+
+
+Rich Presence On/Off toggle
+Application ID input
+(discord.com/developers/applications → New Application → copy ID)
+Test button
+Setup instructions inline
+
+
+
+9. VOICE + AGENT PRESETS
+
+"Hey Kite research [topic]" → Research preset
+"Hey Kite scrape [URL]" → Scrape preset
+"Hey Kite check my emails" → Email Assistant
+"Hey Kite stripe revenue today" → Stripe Dashboard
+"Hey Kite generate image of [description]" → Image Generator
+"Hey Kite run daily briefing" → Daily Briefing
+"Hey Kite cancel [name]" → cancel agent
+"Hey Kite agent status" → speak running agents
+
+After every agent done:
+→ TTS: "[Name] finished. [One sentence result]"
+→ Discord presence: completion state
+
+
+ENGINEERING RULES
+
+NEVER BREAK:
+
+
+Chat tab streaming
+Voice card appearance and behavior
+API key storage and rotation
+GitHub connection (tested working)
+Memory + Sequential Thinking MCP (tested working)
+
+
+ARCHITECTURE:
+
+
+Tauri 2 + Vite vanilla ES modules
+Rust: tokio, thiserror, tracing
+JS: marked + dompurify + highlight.js
+Storage: localStorage
+Keys: localStorage btoa encoded
+
+
+STYLE:
+
+
+NO emojis anywhere
+Clean text badges for all status
+CSS vars: --bg --surface --teal --coral --text --dim
+Fonts: Inter (UI) + Space Mono (code/mono)
+Teal (#00d4aa) = active/success/running
+Coral (#ff6b6b) = error/warning/approval
+Logos: cdn.simpleicons.org/{name}/{color}
+8px border radius, smooth transitions
+
+
+NEW CODE:
+
+
+Rust commands: append before main()
+JS: own script module
+CSS: own block with comment header
+Never log API keys
+Approval required for all write/execute tools
+
+
+MACHINE:
+
+
+Windows 11, username: praga
+App: C:\Users\praga\KITE-APP
+Whisper: C:\Users\praga\whisper-app\server.py
+
+
+
+BUILD ORDER
+
+
+Add all new agent tools (web, files, code, data, AI, comms)
+Activity stream visual overhaul
+Agent presets row
+New agent form tool cards
+Sessions list visual improvements
+New connections
+New MCP servers
+Discord Rich Presence sidecar
+Voice + preset integration
+Full end-to-end test
+
+
+Tell me after each step and wait before continuing.

@@ -18,6 +18,9 @@ imap-proto = "0.10"
 native-tls = "0.2"
 mailparse = "0.15"
 lettre = { version = "0.11", default-features = false, features = ["smtp-transport", "native-tls", "builder"] }
+zip = { version = "2", default-features = false, features = ["deflate"] }
+calamine = "0.26"
+walkdir = "2"
 
 [profile.release]
 strip = true

@@ -808,6 +808,10 @@ body.light .kv-bubble{background:linear-gradient(135deg,rgba(250,250,252,.92),rg
 .cx-name{font-size:13.5px;font-weight:600;color:var(--t1);display:flex;align-items:center;gap:8px}
 .cx-sub{font-size:11px;color:var(--t3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cx-badge{font-family:var(--mono);font-size:9.5px;font-weight:700;letter-spacing:.4px;color:var(--t2);background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-pill);padding:3px 9px;white-space:nowrap}
+.cx-authbadge{font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;color:var(--sky,#61afef);background:rgba(97,174,239,.1);border:1px solid rgba(97,174,239,.25);border-radius:var(--radius-pill);padding:3px 8px;white-space:nowrap}
+.cx-search{flex:1;min-width:140px;max-width:280px;font-family:var(--sans);font-size:12px;color:var(--t1);background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-pill);padding:7px 15px;outline:none;transition:border-color .15s}
+.cx-search:focus{border-color:var(--teal-border)}
+.cx-search::placeholder{color:var(--t3)}
 .cx-statusdot{width:8px;height:8px;border-radius:50%;flex:none;background:var(--t3)}
 .cx-statusdot.on{background:var(--teal);box-shadow:0 0 8px var(--teal-glow)}
 .cx-card-act{display:flex;align-items:center;gap:8px;margin-left:auto}
@@ -1196,11 +1200,15 @@ body.light .kv-bubble{background:linear-gradient(135deg,rgba(250,250,252,.92),rg
     Connect Kite to the services you already use. Each connection unlocks a set of <b style="color:var(--t1)">tools</b> your agents and voice commands can call. Tokens are stored <b style="color:var(--t1)">only in your browser</b> (localStorage, key <code>kite_connections</code>) and only the last 4 characters are ever shown. <b style="color:var(--sky)">Read</b> tools run automatically; <b style="color:var(--orange)">write</b> tools always ask for your approval first.
   </p>
   <div class="cx-bar">
-    <span class="cx-count-pill" id="cx-count">0 of 10 connected</span>
+    <span class="cx-count-pill" id="cx-count">0 connected</span>
+    <input id="cx-search" class="cx-search" type="text" spellcheck="false" autocomplete="off" placeholder="Search connections…" oninput="kiteConnections.search(this.value)">
     <div class="cx-filters">
       <button class="cx-filter active" data-f="all" onclick="kiteConnections.filter('all')">All</button>
-      <button class="cx-filter" data-f="connected" onclick="kiteConnections.filter('connected')">Connected</button>
-      <button class="cx-filter" data-f="available" onclick="kiteConnections.filter('available')">Available</button>
+      <button class="cx-filter" data-f="Productivity" onclick="kiteConnections.filter('Productivity')">Productivity</button>
+      <button class="cx-filter" data-f="Communication" onclick="kiteConnections.filter('Communication')">Communication</button>
+      <button class="cx-filter" data-f="Development" onclick="kiteConnections.filter('Development')">Development</button>
+      <button class="cx-filter" data-f="Analytics" onclick="kiteConnections.filter('Analytics')">Analytics</button>
+      <button class="cx-filter" data-f="Media" onclick="kiteConnections.filter('Media')">Media</button>
     </div>
   </div>
   <div class="cx-grid" id="cx-grid"></div>
@@ -1425,10 +1433,56 @@ body.light .kv-bubble{background:linear-gradient(135deg,rgba(250,250,252,.92),rg
   .ag-cfg-row{display:flex;gap:10px;padding:7px 2px;border-bottom:1px solid var(--border,#1e1e24);font-size:12px}
   .ag-cfg-row .k{flex:none;width:120px;color:var(--t3,#6b6b78);font-family:'Space Mono',monospace;font-size:10.5px}
   .ag-cfg-row .v{flex:1;min-width:0;color:var(--t1,#e6e6e6);word-break:break-word}
+  /* ── Step 3: activity-stream text badges + rich content (no emoji) ── */
+  .agb{flex:none;display:inline-block;font-family:'Space Mono',monospace;font-size:8.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;padding:2px 6px;border-radius:4px;line-height:1.55;white-space:nowrap}
+  .agb-think{background:rgba(255,255,255,.05);color:#7a7a86}
+  .agb-tool{background:rgba(45,212,191,.14);color:var(--teal,#2dd4bf)}
+  .agb-result{background:rgba(255,255,255,.05);color:#8a8a95}
+  .agb-sub{background:rgba(167,139,250,.16);color:#c9a5f0}
+  .agb-image{background:rgba(45,212,191,.14);color:var(--teal,#2dd4bf)}
+  .agb-code{background:rgba(201,165,240,.16);color:#c9a5f0}
+  .agb-file{background:rgba(96,175,239,.16);color:#61afef}
+  .agb-done{background:rgba(52,211,153,.16);color:#34d399}
+  .agb-error{background:rgba(255,107,107,.16);color:var(--coral,#ff6b6b)}
+  .agb-approval{background:rgba(224,192,123,.16);color:#e0c07b}
+  .agb-info{background:rgba(255,255,255,.04);color:#6a6a76}
+  .agb-msg{background:rgba(97,174,239,.14);color:#61afef}
+  .agb-goal{background:rgba(45,212,191,.16);color:var(--teal,#2dd4bf)}
+  /* line layout: badge sits left, content flows right */
+  .ag-l{display:flex;gap:8px;align-items:flex-start;margin:2px 0}
+  .ag-l>.agb{margin-top:1px}
+  .ag-l-body{flex:1;min-width:0;white-space:pre-wrap;word-break:break-word}
+  .ag-l-body.ag-md{white-space:normal}
+  .ag-sub-line{border-left:2px solid rgba(167,139,250,.5);padding-left:8px;margin-left:1px}
+  /* tool-call summary: condensed args preview */
+  .ag-tc-args{color:var(--t3,#6b6b78);font-family:'Space Mono',monospace;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
+  /* rich JSON + tables in results */
+  pre.ag-json{margin:4px 0 0;padding:8px 11px;background:var(--surface,#12121a);border:1px solid var(--border,#26262c);border-radius:7px;font-family:'Space Mono',monospace;font-size:11px;line-height:1.5;color:#9fe6d5;white-space:pre-wrap;word-break:break-word;max-height:260px;overflow:auto}
+  table.ag-tbl{border-collapse:collapse;margin:5px 0 0;font-size:11.5px;max-width:100%;display:block;overflow-x:auto}
+  table.ag-tbl th,table.ag-tbl td{border:1px solid var(--border,#26262c);padding:4px 9px;text-align:left;white-space:nowrap}
+  table.ag-tbl th{background:rgba(45,212,191,.08);color:var(--teal,#2dd4bf);font-family:'Space Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.4px}
+  table.ag-tbl td{color:var(--t2,#9a9aa5)}
+  /* retry button on failed steps + image caption */
+  .ag-retry{margin-left:8px;font-family:'Space Mono',monospace;font-size:10px;color:var(--coral,#ff6b6b);background:none;border:1px solid rgba(255,107,107,.4);border-radius:5px;padding:2px 9px;cursor:pointer;vertical-align:middle}
+  .ag-retry:hover{background:rgba(255,107,107,.12)}
+  .ag-imgcap{font-family:'Space Mono',monospace;font-size:10px;color:var(--t3,#6b6b78);margin-top:4px}
+  /* ── Step 4: agent presets row (top of Agents tab) ── */
+  .ag-presets{display:flex;gap:9px;overflow-x:auto;padding:1px 1px 12px;scrollbar-width:thin}
+  .ag-presets::-webkit-scrollbar{height:6px}
+  .ag-presets::-webkit-scrollbar-thumb{background:var(--border,#26262c);border-radius:3px}
+  .ag-preset{flex:none;width:186px;text-align:left;background:#0c0c0e;border:1px solid #1c1c20;border-left:3px solid rgba(45,212,191,.5);border-radius:10px;padding:10px 12px;cursor:pointer;transition:border-color .14s,background .14s;display:flex;flex-direction:column;gap:4px}
+  .ag-preset:hover{border-color:var(--teal,#2dd4bf);border-left-color:var(--teal,#2dd4bf);background:#0f1413}
+  .ag-preset-name{font-size:12.5px;font-weight:700;color:var(--t1,#e6e6e6)}
+  .ag-preset-desc{font-size:10.5px;line-height:1.4;color:var(--t3,#6b6b78);flex:1}
+  .ag-preset-badge{align-self:flex-start;font-family:'Space Mono',monospace;font-size:8.5px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--teal,#2dd4bf);background:rgba(45,212,191,.12);border-radius:4px;padding:2px 6px;margin-top:2px}
+  body.light .ag-preset{background:#fff;border-color:#e0e0e0}
+  body.light .ag-preset:hover{background:#f3fbfa}
+  #tab-9 .ag-wrap{height:calc(100vh - 216px)}
 </style>
 
 <!-- ═══════════ TAB 9 · AGENTS (autonomous AI) ═══════════ -->
 <div class="tab-panel" id="tab-9">
+  <div class="ag-presets" id="ag-presets"></div>
   <div class="ag-wrap">
     <!-- ░░ LEFT: agents list ░░ -->
     <aside class="ag-list">
@@ -1594,7 +1648,13 @@ body.light .kv-bubble{background:linear-gradient(135deg,rgba(250,250,252,.92),rg
           <label class="agc-card" for="ag-t-artifact"><input type="checkbox" id="ag-t-artifact" class="agc-cb" onchange="kiteAgentTools&&kiteAgentTools.sync()">
             <span class="agc-tog"></span><div class="agc-body"><div class="agc-name">Save artifacts</div><div class="agc-desc">Files &amp; reports</div></div><span class="agc-badge auto">AUTO</span></label>
           <label class="agc-card" for="ag-t-memory"><input type="checkbox" id="ag-t-memory" class="agc-cb" onchange="kiteAgentTools&&kiteAgentTools.sync()">
-            <span class="agc-tog"></span><div class="agc-body"><div class="agc-name">Agent memory</div><div class="agc-desc">Recall + save via Memory MCP</div></div><span class="agc-badge auto">AUTO</span></label>
+            <span class="agc-tog"></span><div class="agc-body"><div class="agc-name">Agent memory</div><div class="agc-desc">Save/recall facts &amp; notes</div></div><span class="agc-badge auto">AUTO</span></label>
+          <label class="agc-card" for="ag-t-ai"><input type="checkbox" id="ag-t-ai" class="agc-cb" onchange="kiteAgentTools&&kiteAgentTools.sync()">
+            <span class="agc-tog"></span><div class="agc-body"><div class="agc-name">AI toolkit</div><div class="agc-desc">Summarize · translate · extract · vision</div></div><span class="agc-badge auto">AUTO</span></label>
+          <label class="agc-card" for="ag-t-creative"><input type="checkbox" id="ag-t-creative" class="agc-cb" onchange="kiteAgentTools&&kiteAgentTools.sync()">
+            <span class="agc-tog"></span><div class="agc-body"><div class="agc-name">Creative</div><div class="agc-desc">Generate images · docs · speech</div></div><span class="agc-badge auto">AUTO</span></label>
+          <label class="agc-card" for="ag-t-productivity"><input type="checkbox" id="ag-t-productivity" class="agc-cb" onchange="kiteAgentTools&&kiteAgentTools.sync()">
+            <span class="agc-tog"></span><div class="agc-body"><div class="agc-name">Productivity</div><div class="agc-desc">Reminders &amp; timers</div></div><span class="agc-badge auto">AUTO</span></label>
         </div>
         <div id="ag-ext-tools"></div>
       </div>
@@ -4434,6 +4494,10 @@ window.kiteConnections = (function(){
     youtube:'<svg fill="#FF0000" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><title>YouTube</title><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>',
   };
 
+  /* real logos for the new services — Simple Icons CDN (CSP is null → loads
+     directly); falls back to a bold letter badge if offline. */
+  const cdn = (slug,color,letter)=>'<img src="https://cdn.simpleicons.org/'+slug+'/'+color+'" alt="'+letter+'" width="22" height="22" style="display:block" onerror="this.onerror=null;this.outerHTML=\'<b>'+letter+'</b>\'">';
+
   /* ════════════════════ SERVICE + TOOL REGISTRY ════════════════════ */
   const SERVICES = [
     /* ─────────────── GITHUB ─────────────── */
@@ -4762,7 +4826,217 @@ window.kiteConnections = (function(){
             if(!out.length)return 'No results.';
             return out.map((x,i)=>`${i+1}. ${x.title}\n   ${x.url}\n   ${x.snippet}`).join('\n\n');}},
       ] },
+
+    /* ─────────────── GOOGLE CALENDAR ─────────────── */
+    { id:'gcal', name:'Google Calendar', color:'#4285F4', letter:'GC', auth:'API Key', icon:cdn('googlecalendar','4285F4','GC'),
+      blurb:'Events: list, create, find free time',
+      fields:[{key:'key',label:'API key',placeholder:'AIza…',hint:'Calendar API key from <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener">console.cloud.google.com</a>. A key reads public calendars; private calendars & creating events need OAuth.'},
+        {key:'calendar',label:'Calendar ID',placeholder:'primary or you@gmail.com',optional:true}],
+      tools:(()=>{ const K=()=>cfg('gcal').key||''; const CAL=()=>encodeURIComponent(cfg('gcal').calendar||'primary'); const B='https://www.googleapis.com/calendar/v3';
+        return [
+        {name:'calendar_list_events',args:['days'],write:false,desc:'List upcoming events for the next N days (default 7).',
+          run:async a=>{const days=Math.max(1,Math.min(90,parseInt(a.days,10)||7));const now=new Date();const tmax=new Date(now.getTime()+days*864e5);
+            const d=await api(`${B}/calendars/${CAL()}/events?key=${K()}&singleEvents=true&orderBy=startTime&timeMin=${now.toISOString()}&timeMax=${tmax.toISOString()}&maxResults=30`);
+            return list(d.items,e=>{const s=(e.start&&(e.start.dateTime||e.start.date))||'?';return `• ${s} — ${e.summary||'(no title)'}${e.location?' @ '+e.location:''}`;},'(no events)');}},
+        {name:'calendar_find_free_time',args:['days'],write:false,desc:'Find free gaps (>=30min, 9–18h) over the next N days.',
+          run:async a=>{const days=Math.max(1,Math.min(14,parseInt(a.days,10)||3));const now=new Date();const tmax=new Date(now.getTime()+days*864e5);
+            const d=await api(`${B}/calendars/${CAL()}/events?key=${K()}&singleEvents=true&orderBy=startTime&timeMin=${now.toISOString()}&timeMax=${tmax.toISOString()}&maxResults=100`);
+            const busy=(d.items||[]).filter(e=>e.start&&e.start.dateTime).map(e=>[new Date(e.start.dateTime),new Date(e.end.dateTime)]);const out=[];
+            for(let dd=0;dd<days;dd++){const day=new Date(now.getTime()+dd*864e5);day.setHours(9,0,0,0);const end=new Date(day);end.setHours(18,0,0,0);let cur=new Date(Math.max(day.getTime(),now.getTime()));
+              const todays=busy.filter(b=>b[0]<end&&b[1]>day).sort((x,y)=>x[0]-y[0]);
+              for(const b of todays){if(b[0]-cur>=18e5)out.push(`${cur.toLocaleString()} → ${b[0].toLocaleTimeString()}`);if(b[1]>cur)cur=b[1];}
+              if(end-cur>=18e5)out.push(`${cur.toLocaleString()} → ${end.toLocaleTimeString()}`);}
+            return out.length?out.map(s=>'• '+s).join('\n'):'(no free slots found)';}},
+        {name:'calendar_create_event',args:['summary','start','end'],write:true,desc:'Create an event (ISO start/end). Requires OAuth — an API key alone is rejected.',
+          run:async a=>{const summary=need(a.summary,'summary');const d=await api(`${B}/calendars/${CAL()}/events?key=${K()}`,{method:'POST',...jbody({summary,start:{dateTime:need(a.start,'start')},end:{dateTime:need(a.end,'end')}})});return `Created event ${d.id||''}`;}},
+        {name:'calendar_delete_event',args:['id'],write:true,desc:'Delete an event by id. Requires OAuth.',
+          run:async a=>{const id=need(a.id,'id');await api(`${B}/calendars/${CAL()}/events/${id}?key=${K()}`,{method:'DELETE'});return `Deleted event ${id}`;}},
+      ];})() },
+
+    /* ─────────────── GOOGLE SHEETS ─────────────── */
+    { id:'gsheets', name:'Google Sheets', color:'#34A853', letter:'GS', auth:'API Key', icon:cdn('googlesheets','34A853','GS'),
+      blurb:'Read & write spreadsheet ranges',
+      fields:[{key:'key',label:'API key',placeholder:'AIza…',hint:'Sheets API key from <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener">console.cloud.google.com</a>. Reading needs the sheet shared “anyone with link”; writing needs OAuth.'}],
+      tools:(()=>{ const K=()=>cfg('gsheets').key||''; const B='https://sheets.googleapis.com/v4/spreadsheets';
+        return [
+        {name:'sheets_read',args:['spreadsheet_id','range'],write:false,desc:'Read a range, e.g. Sheet1!A1:D20.',
+          run:async a=>{const id=need(a.spreadsheet_id,'spreadsheet_id');const range=encodeURIComponent(a.range||'A1:Z50');const d=await api(`${B}/${id}/values/${range}?key=${K()}`);
+            return (d.values||[]).map(r=>r.join('\t')).join('\n')||'(empty range)';}},
+        {name:'sheets_write',args:['spreadsheet_id','range','values'],write:true,desc:'Overwrite a range with values (JSON 2D array). Requires OAuth.',
+          run:async a=>{const id=need(a.spreadsheet_id,'spreadsheet_id');const range=encodeURIComponent(need(a.range,'range'));let v=a.values;if(typeof v==='string')v=JSON.parse(v);
+            await api(`${B}/${id}/values/${range}?valueInputOption=USER_ENTERED&key=${K()}`,{method:'PUT',...jbody({values:v})});return 'Updated '+a.range;}},
+        {name:'sheets_append',args:['spreadsheet_id','range','values'],write:true,desc:'Append rows (JSON 2D array). Requires OAuth.',
+          run:async a=>{const id=need(a.spreadsheet_id,'spreadsheet_id');const range=encodeURIComponent(need(a.range,'range'));let v=a.values;if(typeof v==='string')v=JSON.parse(v);
+            await api(`${B}/${id}/values/${range}:append?valueInputOption=USER_ENTERED&key=${K()}`,{method:'POST',...jbody({values:v})});return 'Appended to '+a.range;}},
+      ];})() },
+
+    /* ─────────────── AIRTABLE ─────────────── */
+    { id:'airtable', name:'Airtable', color:'#18BFFF', letter:'At', auth:'API Key', icon:cdn('airtable','18BFFF','At'),
+      blurb:'Records: list, search, create, update',
+      fields:[{key:'key',label:'Personal access token',placeholder:'pat…',hint:'Create a token at <a href="https://airtable.com/create/tokens" target="_blank" rel="noopener">airtable.com/create/tokens</a> with data.records:read/write scopes.'}],
+      tools:(()=>{ const H=()=>({Authorization:'Bearer '+(cfg('airtable').key||'')}); const B='https://api.airtable.com/v0';
+        return [
+        {name:'airtable_list_records',args:['base','table'],write:false,desc:'List records in a base id / table name.',
+          run:async a=>{const base=need(a.base,'base'),table=encodeURIComponent(need(a.table,'table'));const d=await api(`${B}/${base}/${table}?maxRecords=30`,{headers:H()});
+            return list(d.records,r=>`• ${r.id}: ${JSON.stringify(r.fields).slice(0,160)}`);}},
+        {name:'airtable_search',args:['base','table','query'],write:false,desc:'Search records with a formula, e.g. SEARCH("foo",{Name}).',
+          run:async a=>{const base=need(a.base,'base'),table=encodeURIComponent(need(a.table,'table'));const f=encodeURIComponent(a.query||'');const d=await api(`${B}/${base}/${table}?filterByFormula=${f}&maxRecords=30`,{headers:H()});
+            return list(d.records,r=>`• ${r.id}: ${JSON.stringify(r.fields).slice(0,160)}`);}},
+        {name:'airtable_create_record',args:['base','table','fields'],write:true,desc:'Create a record (fields = JSON object).',
+          run:async a=>{const base=need(a.base,'base'),table=encodeURIComponent(need(a.table,'table'));let f=a.fields;if(typeof f==='string')f=JSON.parse(f);
+            const d=await api(`${B}/${base}/${table}`,{method:'POST',headers:H(),...jbody({fields:f})});return `Created ${d.id}`;}},
+        {name:'airtable_update_record',args:['base','table','id','fields'],write:true,desc:'Update a record by id (fields = JSON object).',
+          run:async a=>{const base=need(a.base,'base'),table=encodeURIComponent(need(a.table,'table')),id=need(a.id,'id');let f=a.fields;if(typeof f==='string')f=JSON.parse(f);
+            await api(`${B}/${base}/${table}/${id}`,{method:'PATCH',headers:H(),...jbody({fields:f})});return `Updated ${id}`;}},
+      ];})() },
+
+    /* ─────────────── TRELLO ─────────────── */
+    { id:'trello', name:'Trello', color:'#0052CC', letter:'Tr', auth:'API Key + Token', icon:cdn('trello','0052CC','Tr'),
+      blurb:'Boards, lists & cards',
+      fields:[{key:'key',label:'API key',placeholder:'trello key',hint:'Get a key + token at <a href="https://trello.com/power-ups/admin" target="_blank" rel="noopener">trello.com/power-ups/admin</a> (or trello.com/app-key).'},
+        {key:'token',label:'Token',placeholder:'trello token'}],
+      tools:(()=>{ const C=()=>{const c=cfg('trello');return `key=${c.key||''}&token=${c.token||''}`;}; const B='https://api.trello.com/1';
+        return [
+        {name:'trello_list_boards',args:[],write:false,desc:'List your boards.',
+          run:async()=>{const d=await api(`${B}/members/me/boards?${C()}&fields=name,url`);return list(d,b=>`• ${b.name} · ${b.id}`);}},
+        {name:'trello_list_cards',args:['board'],write:false,desc:'List cards on a board id.',
+          run:async a=>{const b=need(a.board,'board');const d=await api(`${B}/boards/${b}/cards?${C()}&fields=name,idList`);return list(d,c=>`• ${c.name} · ${c.id} (list ${c.idList})`);}},
+        {name:'trello_create_card',args:['list','name','desc'],write:true,desc:'Create a card in a list id.',
+          run:async a=>{const idList=need(a.list,'list'),name=need(a.name,'name');const d=await api(`${B}/cards?${C()}`,{method:'POST',...jbody({idList,name,desc:a.desc||''})});return `Created card ${d.id}`;}},
+        {name:'trello_move_card',args:['card','list'],write:true,desc:'Move a card to another list id.',
+          run:async a=>{const card=need(a.card,'card'),idList=need(a.list,'list');await api(`${B}/cards/${card}?${C()}`,{method:'PUT',...jbody({idList})});return `Moved card ${card}`;}},
+      ];})() },
+
+    /* ─────────────── TELEGRAM ─────────────── */
+    { id:'telegram', name:'Telegram', color:'#26A5E4', letter:'Tg', auth:'Bot Token', icon:cdn('telegram','26A5E4','Tg'),
+      blurb:'Send messages & read updates',
+      fields:[{key:'token',label:'Bot token',placeholder:'123456:ABC…',hint:'Create a bot with <a href="https://t.me/BotFather" target="_blank" rel="noopener">@BotFather</a> and copy its token.'}],
+      tools:(()=>{ const B=()=>`https://api.telegram.org/bot${cfg('telegram').token||''}`;
+        return [
+        {name:'telegram_get_updates',args:[],write:false,desc:'Read recent messages sent to the bot.',
+          run:async()=>{const d=await api(`${B()}/getUpdates?limit=20`);if(!d.ok)throw new Error('telegram: '+JSON.stringify(d).slice(0,200));
+            return list(d.result,u=>{const m=u.message||u.edited_message||{};return `[chat ${m.chat&&m.chat.id}] ${(m.from&&m.from.username)||'?'}: ${m.text||''}`;},'(no updates — message the bot first)');}},
+        {name:'telegram_send_message',args:['chat_id','text'],write:true,desc:'Send a message to a chat id.',
+          run:async a=>{const chat_id=need(a.chat_id,'chat_id'),text=need(a.text,'text');const d=await api(`${B()}/sendMessage`,{method:'POST',...jbody({chat_id,text})});return d.ok?'sent':JSON.stringify(d).slice(0,200);}},
+      ];})() },
+
+    /* ─────────────── WHATSAPP BUSINESS ─────────────── */
+    { id:'whatsapp', name:'WhatsApp Business', color:'#25D366', letter:'Wa', auth:'API Token', icon:cdn('whatsapp','25D366','Wa'),
+      blurb:'Send WhatsApp messages',
+      fields:[{key:'token',label:'Access token',placeholder:'EAAG…',hint:'From <a href="https://developers.facebook.com" target="_blank" rel="noopener">Meta for Developers</a> → WhatsApp → API Setup.'},
+        {key:'phone_id',label:'Phone number ID',placeholder:'1234567890'}],
+      tools:(()=>{ const c=()=>cfg('whatsapp');
+        return [
+        {name:'whatsapp_send_message',args:['to','text'],write:true,desc:'Send a text message to a phone number (E.164, e.g. 15551234567).',
+          run:async a=>{const to=need(a.to,'to'),text=need(a.text,'text');const cc=c();
+            const d=await api(`https://graph.facebook.com/v20.0/${cc.phone_id||''}/messages`,{method:'POST',headers:{Authorization:'Bearer '+(cc.token||''),'Content-Type':'application/json'},body:JSON.stringify({messaging_product:'whatsapp',to,type:'text',text:{body:text}})});
+            return d.messages?('sent · '+d.messages[0].id):JSON.stringify(d).slice(0,200);}},
+      ];})() },
+
+    /* ─────────────── RAILWAY ─────────────── */
+    { id:'railway', name:'Railway', color:'#8b5cf6', letter:'Rw', auth:'API Token', icon:cdn('railway','FFFFFF','Rw'),
+      blurb:'Projects, deployments & redeploys',
+      fields:[{key:'token',label:'API token',placeholder:'railway token',hint:'Create a token at <a href="https://railway.app/account/tokens" target="_blank" rel="noopener">railway.app/account/tokens</a>.'}],
+      tools:(()=>{ const gql=(query,variables)=>api('https://backboard.railway.app/graphql/v2',{method:'POST',headers:{Authorization:'Bearer '+(cfg('railway').token||''),'Content-Type':'application/json'},body:JSON.stringify({query,variables:variables||{}})}).then(d=>{if(d.errors)throw new Error(d.errors.map(e=>e.message).join('; '));return d.data;});
+        return [
+        {name:'railway_list_projects',args:[],write:false,desc:'List your projects.',
+          run:async()=>{const d=await gql('{me{projects{edges{node{id name}}}}}');const ps=((d.me&&d.me.projects&&d.me.projects.edges)||[]);return list(ps,e=>`• ${e.node.name} · ${e.node.id}`);}},
+        {name:'railway_list_deployments',args:['project'],write:false,desc:'List recent deployments for a project id.',
+          run:async a=>{const pid=need(a.project,'project');const d=await gql('query($p:String!){deployments(input:{projectId:$p},first:15){edges{node{id status staticUrl createdAt}}}}',{p:pid});const ds=((d.deployments&&d.deployments.edges)||[]);return list(ds,e=>`${e.node.status} · ${e.node.id} · ${e.node.staticUrl||''}`);}},
+        {name:'railway_redeploy',args:['deployment'],write:true,desc:'Redeploy a deployment id.',
+          run:async a=>{const id=need(a.deployment,'deployment');await gql('mutation($id:String!){deploymentRedeploy(id:$id){id}}',{id});return `Redeploy triggered for ${id}`;}},
+      ];})() },
+
+    /* ─────────────── PLANETSCALE ─────────────── */
+    { id:'planetscale', name:'PlanetScale', color:'#8b5cf6', letter:'Ps', auth:'Service Token', icon:cdn('planetscale','FFFFFF','Ps'),
+      blurb:'Databases & branches',
+      fields:[{key:'org',label:'Organization',placeholder:'my-org'},{key:'token_id',label:'Token ID',placeholder:'token id'},
+        {key:'token',label:'Token',placeholder:'pscale_tkn_…',hint:'Create a service token at <a href="https://app.planetscale.com" target="_blank" rel="noopener">app.planetscale.com</a> → Settings → Service tokens.'}],
+      tools:(()=>{ const H=()=>({Authorization:(cfg('planetscale').token_id||'')+':'+(cfg('planetscale').token||'')}); const ORG=()=>cfg('planetscale').org||''; const B='https://api.planetscale.com/v1';
+        return [
+        {name:'planetscale_list_databases',args:[],write:false,desc:'List databases in the organization.',
+          run:async()=>{const d=await api(`${B}/organizations/${ORG()}/databases`,{headers:H()});return list(d.data,x=>`• ${x.name} · ${x.state||''}`);}},
+        {name:'planetscale_list_branches',args:['database'],write:false,desc:'List branches of a database.',
+          run:async a=>{const db=need(a.database,'database');const d=await api(`${B}/organizations/${ORG()}/databases/${db}/branches`,{headers:H()});return list(d.data,x=>`• ${x.name}${x.production?' (production)':''}`);}},
+      ];})() },
+
+    /* ─────────────── PLAUSIBLE ─────────────── */
+    { id:'plausible', name:'Plausible', color:'#6366f1', letter:'Pl', auth:'API Key', icon:'<span style="color:#6366f1;font-family:var(--mono);font-weight:700;font-size:14px">Pl</span>',
+      blurb:'Privacy-first site analytics',
+      fields:[{key:'key',label:'API key',placeholder:'plausible key',hint:'Create a key at <a href="https://plausible.io/settings" target="_blank" rel="noopener">plausible.io/settings</a> → API Keys.'}],
+      tools:(()=>{ const H=()=>({Authorization:'Bearer '+(cfg('plausible').key||'')}); const B='https://plausible.io/api/v1';
+        return [
+        {name:'plausible_realtime',args:['site'],write:false,desc:'Current visitors on a site (domain).',
+          run:async a=>{const s=need(a.site,'site');const d=await api(`${B}/stats/realtime/visitors?site_id=${encodeURIComponent(s)}`,{headers:H()});return 'Current visitors: '+d;}},
+        {name:'plausible_get_stats',args:['site','period'],write:false,desc:'Aggregate stats (period: day|7d|30d|month).',
+          run:async a=>{const s=need(a.site,'site');const p=a.period||'7d';const d=await api(`${B}/stats/aggregate?site_id=${encodeURIComponent(s)}&period=${p}&metrics=visitors,pageviews,bounce_rate,visit_duration`,{headers:H()});const r=d.results||{};return `visitors ${r.visitors&&r.visitors.value} · pageviews ${r.pageviews&&r.pageviews.value} · bounce ${r.bounce_rate&&r.bounce_rate.value}% · avg ${r.visit_duration&&r.visit_duration.value}s`;}},
+        {name:'plausible_top_pages',args:['site','period'],write:false,desc:'Top pages by pageviews.',
+          run:async a=>{const s=need(a.site,'site');const p=a.period||'7d';const d=await api(`${B}/stats/breakdown?site_id=${encodeURIComponent(s)}&period=${p}&property=event:page&limit=10`,{headers:H()});return list(d.results,x=>`• ${x.page} — ${x.visitors}`);}},
+      ];})() },
+
+    /* ─────────────── POSTHOG ─────────────── */
+    { id:'posthog', name:'PostHog', color:'#F54E00', letter:'Ph', auth:'API Key', icon:cdn('posthog','F54E00','Ph'),
+      blurb:'Product analytics & feature flags',
+      fields:[{key:'key',label:'Personal API key',placeholder:'phx_…',hint:'Create a personal API key at <a href="https://app.posthog.com/settings/user-api-keys" target="_blank" rel="noopener">app.posthog.com</a> → Settings.'},
+        {key:'project',label:'Project ID',placeholder:'12345'},
+        {key:'host',label:'Host',placeholder:'https://us.posthog.com',optional:true}],
+      tools:(()=>{ const H=()=>({Authorization:'Bearer '+(cfg('posthog').key||'')}); const HOST=()=>(cfg('posthog').host||'https://us.posthog.com').replace(/\/$/,''); const P=()=>cfg('posthog').project||'';
+        return [
+        {name:'posthog_get_events',args:[],write:false,desc:'Recent events.',
+          run:async()=>{const d=await api(`${HOST()}/api/projects/${P()}/events/?limit=20`,{headers:H()});return list(d.results,e=>`• ${e.event} · ${e.timestamp}`);}},
+        {name:'posthog_get_insights',args:[],write:false,desc:'List saved insights.',
+          run:async()=>{const d=await api(`${HOST()}/api/projects/${P()}/insights/?limit=15`,{headers:H()});return list(d.results,i=>`• ${i.name||i.derived_name||i.id}`);}},
+        {name:'posthog_list_feature_flags',args:[],write:false,desc:'List feature flags.',
+          run:async()=>{const d=await api(`${HOST()}/api/projects/${P()}/feature_flags/?limit=30`,{headers:H()});return list(d.results,f=>`• ${f.key} — ${f.active?'active':'inactive'}`);}},
+      ];})() },
+
+    /* ─────────────── STRIPE ─────────────── */
+    { id:'stripe', name:'Stripe', color:'#635BFF', letter:'St', auth:'API Key', icon:cdn('stripe','635BFF','St'),
+      blurb:'Balance, payments, customers, revenue',
+      fields:[{key:'key',label:'Secret key',placeholder:'sk_live_… / sk_test_…',hint:'From <a href="https://dashboard.stripe.com/apikeys" target="_blank" rel="noopener">dashboard.stripe.com/apikeys</a>. Use a restricted key for read-only.'}],
+      tools:(()=>{ const H=()=>({Authorization:'Bearer '+(cfg('stripe').key||'')}); const B='https://api.stripe.com/v1';
+        const form=o=>({headers:{Authorization:'Bearer '+(cfg('stripe').key||''),'Content-Type':'application/x-www-form-urlencoded'},body:Object.entries(o).map(([k,v])=>encodeURIComponent(k)+'='+encodeURIComponent(v)).join('&')});
+        return [
+        {name:'stripe_get_balance',args:[],write:false,desc:'Current account balance.',
+          run:async()=>{const d=await api(`${B}/balance`,{headers:H()});const f=arr=>((arr||[]).map(x=>(x.amount/100).toFixed(2)+' '+x.currency.toUpperCase()).join(', ')||'0');return `Available: ${f(d.available)} · Pending: ${f(d.pending)}`;}},
+        {name:'stripe_list_payments',args:['count'],write:false,desc:'Recent payment intents.',
+          run:async a=>{const n=Math.max(1,Math.min(50,parseInt(a.count,10)||10));const d=await api(`${B}/payment_intents?limit=${n}`,{headers:H()});return list(d.data,p=>`${(p.amount/100).toFixed(2)} ${p.currency.toUpperCase()} · ${p.status} · ${p.id}`);}},
+        {name:'stripe_list_customers',args:['count'],write:false,desc:'Recent customers.',
+          run:async a=>{const n=Math.max(1,Math.min(50,parseInt(a.count,10)||10));const d=await api(`${B}/customers?limit=${n}`,{headers:H()});return list(d.data,c=>`• ${c.email||c.name||c.id} · ${c.id}`);}},
+        {name:'stripe_get_revenue',args:['count'],write:false,desc:'Sum of recent succeeded charges (last N, default 100).',
+          run:async a=>{const n=Math.max(1,Math.min(100,parseInt(a.count,10)||100));const d=await api(`${B}/charges?limit=${n}`,{headers:H()});const ok=(d.data||[]).filter(c=>c.paid&&c.status==='succeeded');const by={};ok.forEach(c=>{by[c.currency]=(by[c.currency]||0)+c.amount;});return 'Revenue (last '+ok.length+' charges): '+(Object.keys(by).map(k=>(by[k]/100).toFixed(2)+' '+k.toUpperCase()).join(', ')||'0');}},
+        {name:'stripe_create_payment_link',args:['amount','currency','name'],write:true,desc:'Create a payment link (amount in cents). Creates a price + link.',
+          run:async a=>{const amount=need(a.amount,'amount');const currency=a.currency||'usd';const name=a.name||'Payment';
+            const price=await api(`${B}/prices`,{method:'POST',...form({'unit_amount':amount,'currency':currency,'product_data[name]':name})});
+            const link=await api(`${B}/payment_links`,{method:'POST',...form({'line_items[0][price]':price.id,'line_items[0][quantity]':1})});
+            return 'Payment link: '+link.url;}},
+      ];})() },
+
+    /* ─────────────── SPOTIFY ─────────────── */
+    { id:'spotify', name:'Spotify', color:'#1DB954', letter:'Sp', auth:'OAuth Token', icon:cdn('spotify','1DB954','Sp'),
+      blurb:'Now playing, recent, search, play',
+      fields:[{key:'token',label:'OAuth access token',placeholder:'BQ…',hint:'Get a token from the <a href="https://developer.spotify.com/documentation/web-api" target="_blank" rel="noopener">Spotify Web API</a> console (scopes: user-read-playback-state, user-modify-playback-state, user-read-recently-played). Tokens expire hourly.'}],
+      tools:(()=>{ const H=()=>({Authorization:'Bearer '+(cfg('spotify').token||'')}); const B='https://api.spotify.com/v1';
+        return [
+        {name:'spotify_now_playing',args:[],write:false,desc:'What is currently playing.',
+          run:async()=>{const r=await fetch(`${B}/me/player/currently-playing`,{headers:H()});if(r.status===204)return '(nothing playing)';const d=await r.json();const t=d&&d.item;return t?`${t.name} — ${t.artists.map(x=>x.name).join(', ')} (${t.album.name})`:'(nothing playing)';}},
+        {name:'spotify_recently_played',args:['count'],write:false,desc:'Recently played tracks.',
+          run:async a=>{const n=Math.max(1,Math.min(50,parseInt(a.count,10)||10));const d=await api(`${B}/me/player/recently-played?limit=${n}`,{headers:H()});return list(d.items,i=>`• ${i.track.name} — ${i.track.artists.map(x=>x.name).join(', ')}`);}},
+        {name:'spotify_search',args:['query','type'],write:false,desc:'Search (type: track|artist|album|playlist).',
+          run:async a=>{const q=need(a.query,'query');const type=a.type||'track';const d=await api(`${B}/search?type=${type}&limit=10&q=${encodeURIComponent(q)}`,{headers:H()});const items=(d[type+'s']&&d[type+'s'].items)||[];return list(items,x=>`• ${x.name}${x.artists?(' — '+x.artists.map(y=>y.name).join(', ')):''} · ${x.uri}`);}},
+        {name:'spotify_play',args:['uri'],write:true,desc:'Start playback of a track/album/playlist URI.',
+          run:async a=>{const uri=need(a.uri,'uri');const body=uri.includes(':track:')?{uris:[uri]}:{context_uri:uri};await api(`${B}/me/player/play`,{method:'PUT',headers:H(),...jbody(body)});return 'Playing '+uri;}},
+      ];})() },
   ];
+
+  /* service → category (for the filter bar) */
+  const CATS = { github:'Development', gmail:'Communication', drive:'Productivity', notion:'Productivity',
+    cloudflare:'Development', linear:'Development', vercel:'Development', figma:'Development', supabase:'Development',
+    discord:'Communication', twitter:'Communication', reddit:'Media', youtube:'Media', openai:'Development', websearch:'Media',
+    gcal:'Productivity', gsheets:'Productivity', airtable:'Productivity', trello:'Productivity',
+    telegram:'Communication', whatsapp:'Communication', railway:'Development', planetscale:'Development',
+    plausible:'Analytics', posthog:'Analytics', stripe:'Analytics', spotify:'Media' };
+  SERVICES.forEach(s=>{ s.cat = CATS[s.id] || 'Other'; if(!s.auth) s.auth = s.noAuth ? '' : 'API Key'; });
 
   /* Notion helpers */
   function notionTitle(p){
@@ -4810,15 +5084,21 @@ window.kiteConnections = (function(){
   }
 
   /* ════════════════════════ RENDER ════════════════════════ */
-  let _filter='all';
+  let _filter='all', _search='';
   function render(){
     const grid=$('cx-grid'); if(!grid) return;
     const total=SERVICES.length, conn=SERVICES.filter(isConnected).length;
     const cp=$('cx-count'); if(cp) cp.textContent=`${conn} of ${total} connected`;
-    grid.querySelectorAll('.cx-filter, [data-f]');
     document.querySelectorAll('#tab-10 .cx-filter').forEach(b=>b.classList.toggle('active',b.dataset.f===_filter));
-    const shown=SERVICES.filter(s=>{const c=isConnected(s);return _filter==='all'||(_filter==='connected'&&c)||(_filter==='available'&&!c);});
-    grid.innerHTML = shown.map(cardHTML).join('') || '<div style="color:var(--t3);font-size:12px;padding:20px">Nothing here.</div>';
+    const q=_search.trim().toLowerCase();
+    let shown=SERVICES.filter(s=>{
+      const catOk = _filter==='all' || s.cat===_filter;
+      const qOk = !q || (s.name+' '+(s.blurb||'')+' '+s.tools.map(t=>t.name).join(' ')).toLowerCase().includes(q);
+      return catOk && qOk;
+    });
+    // connected services first, then alphabetical
+    shown=shown.slice().sort((a,b)=>{const ca=isConnected(a),cb=isConnected(b);if(ca!==cb)return ca?-1:1;return a.name.localeCompare(b.name);});
+    grid.innerHTML = shown.map(cardHTML).join('') || '<div style="color:var(--t3);font-size:12px;padding:20px">No connections match.</div>';
     shown.forEach(s=>{
       const head=document.getElementById('cx-head-'+s.id);
       if(head) head.onclick=e=>{ if(e.target.closest('.cx-connect-btn'))return; document.getElementById('cx-card-'+s.id).classList.toggle('open'); };
@@ -4836,6 +5116,7 @@ window.kiteConnections = (function(){
           <div class="cx-sub">${esc3(sub)}</div>
         </div>
         <div class="cx-card-act">
+          ${s.auth?`<span class="cx-authbadge">${esc3(s.auth)}</span>`:''}
           <span class="cx-badge">${s.tools.length} tool${s.tools.length===1?'':'s'}</span>
           ${s.noAuth?'':`<button class="cx-connect-btn${c?' dim':''}" onclick="kiteConnections.openModal('${s.id}')">${c?'Manage':'Connect'}</button>`}
           <span class="cx-chev">▶</span>
@@ -4896,12 +5177,13 @@ window.kiteConnections = (function(){
   }
 
   function filter(f){ _filter=f; render(); }
+  function search(v){ _search=v||''; render(); }
 
   let _booted=false;
   function init(){ if(!_booted){_booted=true;} render(); }
 
   return {
-    init, render, filter, openModal, closeModal, saveModal, forget, testTool,
+    init, render, filter, search, openModal, closeModal, saveModal, forget, testTool,
     /* public API for agents / voice */
     runTool,
     // Merge a {serviceId:{key:val,…},…} object (from a dropped tokens JSON) into
@@ -5455,6 +5737,92 @@ window.kiteMCP = (function(){
     return null;
   }
 
+  /* ══ helpers for the expanded agent toolset (web/data/ai/memory/creative) ══ */
+  // one-shot LLM call reusing the agent's provider chain; returns plain text
+  async function agLLM(a, prompt, system){
+    const msgs = [];
+    if (system) msgs.push({ role:'system', content: system });
+    msgs.push({ role:'user', content: String(prompt) });
+    const r = await agentAsk(a, msgs);
+    return (r && r.text) ? String(r.text).trim() : '';
+  }
+  // resolve a possibly-relative path to an absolute path under the agent cwd
+  function agAbs(a, p){
+    p = String(p||'');
+    if (/^[a-zA-Z]:[\\/]/.test(p) || p.startsWith('\\\\') || p.startsWith('/')) return p;
+    const base = String(a.cwd||'').replace(/[\\/]+$/,'');
+    return base ? (base + '\\' + p.replace(/^[\\/]+/,'')) : p;
+  }
+  // localStorage-backed notes + memory fallback (used when Memory MCP is off)
+  const agNotesLS = 'kite_agent_notes', agMemLS = 'kite_agent_memory';
+  function agLoad(key){ try{ return JSON.parse(localStorage.getItem(key)||'[]'); }catch(_){ return []; } }
+  function agSave(key, v){ try{ localStorage.setItem(key, JSON.stringify(v)); }catch(_){ } }
+  // ensure any one of the named MCP servers is running; returns its id
+  async function ensureMCP(names){
+    for (const n of names){ try{ return await window.kiteMCP.ensureServer(n); }catch(_){ } }
+    throw new Error('required MCP server not available: ' + names.join('/'));
+  }
+  // tolerant CSV parser (handles quotes + embedded commas/newlines)
+  function agParseCSV(text){
+    const rows=[]; let row=[], cur='', q=false;
+    text = String(text||'').replace(/\r\n/g,'\n').replace(/\r/g,'\n');
+    for(let i=0;i<text.length;i++){ const c=text[i];
+      if(q){ if(c==='"'){ if(text[i+1]==='"'){cur+='"';i++;} else q=false; } else cur+=c; }
+      else { if(c==='"')q=true; else if(c===','){ row.push(cur); cur=''; }
+             else if(c==='\n'){ row.push(cur); rows.push(row); row=[]; cur=''; } else cur+=c; }
+    }
+    if(cur!==''||row.length){ row.push(cur); rows.push(row); }
+    return rows.filter(r=>r.length>1||(r.length===1&&r[0]!==''));
+  }
+  // coerce loose data shapes into [{label,value}] for charting
+  function agNormalizeSeries(data){
+    let arr=[];
+    if(Array.isArray(data)){
+      if(data.length && typeof data[0]==='object' && data[0]!==null){
+        arr=data.map(d=>({label:String(d.label!=null?d.label:(d.name!=null?d.name:(d.x!=null?d.x:''))), value:Number(d.value!=null?d.value:d.y)||0}));
+      } else { arr=data.map((v,i)=>({label:String(i+1), value:Number(v)||0})); }
+    } else if(data && typeof data==='object'){
+      arr=Object.keys(data).map(k=>({label:k, value:Number(data[k])||0}));
+    }
+    return arr;
+  }
+  // render bar/line/pie to a PNG data URI via an offscreen canvas (no libraries)
+  function agChart(data, type, title){
+    const series=agNormalizeSeries(data);
+    if(!series.length) throw new Error('generate_chart: no numeric data to plot');
+    type=String(type||'bar').toLowerCase();
+    const W=680,H=420,pad=54;
+    const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
+    const g=cv.getContext('2d');
+    g.fillStyle='#0e0e13'; g.fillRect(0,0,W,H);
+    g.textBaseline='top'; g.fillStyle='#e8e8ee'; g.font='600 16px Inter,system-ui,sans-serif';
+    if(title) g.fillText(String(title).slice(0,60),pad,16);
+    const palette=['#2dd4bf','#ff6b6b','#e0c07b','#8ab4f8','#c9a5f0','#7ee787','#f0883e','#79c0ff'];
+    const cx=pad, cy=54, cw=W-pad*2, ch=H-cy-40;
+    const max=Math.max(...series.map(s=>s.value),0)||1, min=Math.min(...series.map(s=>s.value),0);
+    if(type==='pie'){
+      const total=series.reduce((s,x)=>s+Math.abs(x.value),0)||1;
+      let ang=-Math.PI/2; const R=Math.min(cw,ch)/2-10, ox=cx+cw/2-40, oy=cy+ch/2;
+      series.forEach((s,i)=>{ const a2=ang+Math.abs(s.value)/total*Math.PI*2; g.beginPath(); g.moveTo(ox,oy); g.arc(ox,oy,R,ang,a2); g.closePath(); g.fillStyle=palette[i%palette.length]; g.fill(); ang=a2; });
+      g.font='12px Inter,sans-serif';
+      series.forEach((s,i)=>{ const ly=cy+i*18; g.fillStyle=palette[i%palette.length]; g.fillRect(W-150,ly,12,12); g.fillStyle='#c9c9d2'; g.fillText(String(s.label+' · '+s.value).slice(0,22),W-132,ly); });
+    } else if(type==='line'){
+      g.strokeStyle='#2a2a35'; g.lineWidth=1; g.beginPath(); g.moveTo(cx,cy); g.lineTo(cx,cy+ch); g.lineTo(cx+cw,cy+ch); g.stroke();
+      const span=(max-min)||1;
+      g.strokeStyle=palette[0]; g.lineWidth=2; g.beginPath();
+      series.forEach((s,i)=>{ const x=cx+(series.length===1?cw/2:i/(series.length-1)*cw); const y=cy+ch-((s.value-min)/span)*ch; if(i===0)g.moveTo(x,y);else g.lineTo(x,y); });
+      g.stroke(); g.fillStyle=palette[0];
+      series.forEach((s,i)=>{ const x=cx+(series.length===1?cw/2:i/(series.length-1)*cw); const y=cy+ch-((s.value-min)/span)*ch; g.beginPath(); g.arc(x,y,3,0,Math.PI*2); g.fill(); });
+      g.fillStyle='#8a8a99'; g.font='11px Inter,sans-serif';
+      series.forEach((s,i)=>{ if(series.length>12 && (i%Math.ceil(series.length/12)))return; const x=cx+(series.length===1?cw/2:i/(series.length-1)*cw); g.fillText(String(s.label).slice(0,8),x-8,cy+ch+6); });
+    } else {
+      g.strokeStyle='#2a2a35'; g.lineWidth=1; g.beginPath(); g.moveTo(cx,cy); g.lineTo(cx,cy+ch); g.lineTo(cx+cw,cy+ch); g.stroke();
+      const n=series.length, gap=cw/n, bw=gap*0.62, base=cy+ch;
+      series.forEach((s,i)=>{ const h=Math.abs(s.value)/max*ch; const x=cx+i*gap+(gap-bw)/2, y=base-h; g.fillStyle=palette[i%palette.length]; g.fillRect(x,y,bw,h); g.fillStyle='#8a8a99'; g.font='11px Inter,sans-serif'; g.fillText(String(s.label).slice(0,8),x,base+6); g.fillStyle='#c9c9d2'; g.fillText(String(s.value).slice(0,8),x,y-14); });
+    }
+    return cv.toDataURL('image/png');
+  }
+
   /* ══ TOOL REGISTRY ══ */
   const AG_TOOLS = {
     web_fetch: {
@@ -5528,7 +5896,7 @@ window.kiteMCP = (function(){
           budget: { maxTokens: a.budget.maxTokens, maxCost: a.budget.maxCost },
           depth: a.depth + 1, parent: a.id
         });
-        pushAct(a, { t: 'info', text: '⑂ spawned subagent "' + name + '"' });
+        pushAct(a, { t: 'subagent', text: 'Spawned subagent "' + name + '"' });
         const res = await runAgent(child);
         return 'Subagent "' + name + '" finished (' + res.status + '):\n' + (res.result || '(no result)');
       }
@@ -5548,7 +5916,7 @@ window.kiteMCP = (function(){
         if (!dataUri) return 'Screenshot requested but no image was returned by Puppeteer. ' + (mcpTextOf(res) || '');
         a.artifacts = a.artifacts || [];
         a.artifacts.push({ kind: 'image', name: (args.selector ? 'element' : 'page') + ' · ' + url, src: dataUri });
-        pushAct(a, { t: 'image', src: dataUri, caption: url });
+        pushAct(a, { t: 'image', imgType: 'screenshot', src: dataUri, caption: url });
         if (AG.selected === a.id) renderDetail(a);
         let out = 'Screenshot of ' + url + ' captured' + (args.selector ? (' (selector "' + args.selector + '")') : '') + ' and shown in the activity stream.';
         if (args.analyze){
@@ -5647,6 +6015,301 @@ window.kiteMCP = (function(){
         if (AG.selected === a.id) renderDetail(a);
         return 'Saved artifact "' + name + '" (' + content.length + ' bytes, ' + type + ').';
       }
+    },
+
+    /* ── WEB & RESEARCH (web flag) ── */
+    web_scrape: {
+      flag: 'web', approval: false,
+      desc: 'web_scrape — args {"url": string, "selector"?: string}. Fetch a page and extract text; with a CSS selector, return the text of each matching element (first 50). No browser needed.',
+      run: async (a, args) => {
+        const url = args && args.url; if (!url) throw new Error('web_scrape needs args.url');
+        const r = await nativeInvoke('http_proxy', { req: { url, method:'GET', headers:{ 'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0 Safari/537.36' }, body:null } });
+        const html = (r && r.body) || '';
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        const sel = args && args.selector;
+        if (sel){
+          const els = Array.from(doc.querySelectorAll(sel)).slice(0,50).map(e => (e.textContent||'').replace(/\s+/g,' ').trim()).filter(Boolean);
+          return els.length ? els.join('\n---\n').slice(0,6000) : '(no elements matched "'+sel+'")';
+        }
+        const body = (doc.body ? (doc.body.textContent||'') : '').replace(/\s+/g,' ').trim();
+        return 'HTTP '+(r?r.status:'?')+'\n'+body.slice(0,6000);
+      }
+    },
+    web_monitor: {
+      flag: 'web', approval: false,
+      desc: 'web_monitor — args {"url": string}. Fetch a URL and compare it to the last snapshot Kite saw; reports whether the page changed since the previous check (state persists between runs).',
+      run: async (a, args) => {
+        const url = args && args.url; if (!url) throw new Error('web_monitor needs args.url');
+        const r = await nativeInvoke('http_proxy', { req: { url, method:'GET', headers:{ 'User-Agent':'Mozilla/5.0' }, body:null } });
+        const text = ((r && r.body) || '').replace(/<script[\s\S]*?<\/script>/gi,' ').replace(/<style[\s\S]*?<\/style>/gi,' ').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();
+        let h=0; for(let i=0;i<text.length;i++){ h=(h*31 + text.charCodeAt(i))>>>0; }
+        const store = agLoad('kite_web_monitor'); const prev = store.find(x=>x.url===url); const now = Date.now();
+        if (!prev){ store.push({ url, hash:h, ts:now, len:text.length }); agSave('kite_web_monitor', store); return 'First snapshot recorded for '+url+' ('+text.length+' chars). Re-run web_monitor later to detect changes.'; }
+        const changed = prev.hash!==h; const dl = text.length-prev.len;
+        prev.hash=h; prev.ts=now; prev.len=text.length; agSave('kite_web_monitor', store);
+        return changed ? ('CHANGED — '+url+' differs from the last snapshot ('+(dl>=0?'+':'')+dl+' chars).') : ('UNCHANGED — '+url+' is identical to the last snapshot.');
+      }
+    },
+
+    /* ── FILES: read/list/search + parsers (read flag) ── */
+    file_list: {
+      flag: 'read', approval: false,
+      desc: 'file_list — args {"path"?: string}. List the contents of a directory inside the working directory (default: the working-directory root).',
+      run: async (a, args) => { if (!a.cwd) throw new Error('no working directory set'); return await nativeInvoke('agent_file_list', { req: { cwd: a.cwd, path: (args&&args.path)||'' } }); }
+    },
+    file_search: {
+      flag: 'read', approval: false,
+      desc: 'file_search — args {"pattern": string, "dir"?: string}. Find files by name (supports * wildcards, e.g. "*.py") under the working directory, recursively.',
+      run: async (a, args) => { if (!a.cwd) throw new Error('no working directory set'); const pattern = args&&args.pattern; if (!pattern) throw new Error('file_search needs args.pattern'); return await nativeInvoke('agent_file_search', { req: { cwd:a.cwd, dir:(args&&args.dir)||'', pattern } }); }
+    },
+    parse_csv: {
+      flag: 'read', approval: false,
+      desc: 'parse_csv — args {"path": string, "max_rows"?: number}. Read a CSV file and return columns, row count, and the first rows (tab-separated).',
+      run: async (a, args) => {
+        if (!a.cwd) throw new Error('no working directory set'); const path = args&&args.path; if (!path) throw new Error('parse_csv needs args.path');
+        const raw = await nativeInvoke('agent_file_read', { req:{ cwd:a.cwd, path } });
+        const rows = agParseCSV(raw); if (!rows.length) return '(empty CSV)';
+        const max = Math.min(Math.max(parseInt(args&&args.max_rows,10)||20,1),200);
+        const out = ['Columns ('+rows[0].length+'): '+rows[0].join(', '), 'Data rows: '+(rows.length-1), '', rows.slice(0,max+1).map(r=>r.join('\t')).join('\n')];
+        if (rows.length-1 > max) out.push('…['+(rows.length-1-max)+' more rows]');
+        return out.join('\n');
+      }
+    },
+    parse_json: {
+      flag: 'read', approval: false,
+      desc: 'parse_json — args {"path": string, "pointer"?: string}. Read and pretty-print a JSON file; optional dot-path pointer (e.g. "data.items.0") drills into a subtree.',
+      run: async (a, args) => {
+        if (!a.cwd) throw new Error('no working directory set'); const path = args&&args.path; if (!path) throw new Error('parse_json needs args.path');
+        const raw = await nativeInvoke('agent_file_read', { req:{ cwd:a.cwd, path } });
+        let obj; try{ obj = JSON.parse(raw); }catch(e){ throw new Error('invalid JSON: '+e.message); }
+        if (args && args.pointer){ for (const k of String(args.pointer).split('.').filter(Boolean)){ obj = (obj==null)?undefined:obj[k]; } }
+        return JSON.stringify(obj, null, 2).slice(0, 6000);
+      }
+    },
+    parse_pdf: {
+      flag: 'read', approval: false,
+      desc: 'parse_pdf — args {"path": string}. Extract text from a PDF via the PDF MCP server (enable "PDF" in the MCP tab first).',
+      run: async (a, args) => {
+        const path = args&&args.path; if (!path) throw new Error('parse_pdf needs args.path');
+        const abs = agAbs(a, path); const id = await ensureMCP(['pdf']);
+        for (const [tool,key] of [['read_pdf','path'],['extract_text','path'],['read_pdf','file'],['extract_text','file']]){
+          try{ const res = await window.kiteMCP.callTool(id, tool, { [key]: abs }, { noApproval:true }); if (res && String(res).trim()) return String(res).slice(0,6000); }catch(_){ }
+        }
+        throw new Error('PDF MCP returned no text — check the server is running and the path exists: '+abs);
+      }
+    },
+    parse_excel: {
+      flag: 'read', approval: false,
+      desc: 'parse_excel — args {"path": string, "sheet"?: string}. Read an .xlsx/.xls/.ods sheet and return it as tab-separated rows.',
+      run: async (a, args) => { if (!a.cwd) throw new Error('no working directory set'); const path = args&&args.path; if (!path) throw new Error('parse_excel needs args.path'); return await nativeInvoke('agent_parse_excel', { req:{ cwd:a.cwd, path, sheet:(args&&args.sheet)||'' } }); }
+    },
+
+    /* ── FILES: mutating (write flag) ── */
+    file_append: {
+      flag: 'write', approval: true,
+      desc: 'file_append — args {"path": string, "content": string}. Append text to a file in the working directory (asks permission).',
+      run: async (a, args) => { if (!a.cwd) throw new Error('no working directory set'); const path = args&&args.path; if (!path) throw new Error('file_append needs args.path'); return await nativeInvoke('agent_file_append', { req:{ cwd:a.cwd, path, content:(args&&args.content)||'' } }); }
+    },
+    file_delete: {
+      flag: 'write', approval: true,
+      desc: 'file_delete — args {"path": string}. Delete a file or directory inside the working directory (asks permission).',
+      run: async (a, args) => { if (!a.cwd) throw new Error('no working directory set'); const path = args&&args.path; if (!path) throw new Error('file_delete needs args.path'); return await nativeInvoke('agent_file_delete', { req:{ cwd:a.cwd, path } }); }
+    },
+    file_move: {
+      flag: 'write', approval: true,
+      desc: 'file_move — args {"from": string, "to": string}. Move or rename a file inside the working directory (asks permission).',
+      run: async (a, args) => { if (!a.cwd) throw new Error('no working directory set'); const from = args&&args.from, to = args&&args.to; if (!from||!to) throw new Error('file_move needs args.from and args.to'); return await nativeInvoke('agent_file_move', { req:{ cwd:a.cwd, from, to } }); }
+    },
+    file_zip: {
+      flag: 'write', approval: false,
+      desc: 'file_zip — args {"files": string[], "output": string}. Create a .zip archive of the listed files (paths inside the working directory).',
+      run: async (a, args) => { if (!a.cwd) throw new Error('no working directory set'); let files = args&&args.files; if (typeof files==='string') files = files.split(',').map(s=>s.trim()).filter(Boolean); if (!Array.isArray(files)||!files.length) throw new Error('file_zip needs args.files (array of paths)'); return await nativeInvoke('agent_file_zip', { req:{ cwd:a.cwd, files, output:(args&&args.output)||'archive.zip' } }); }
+    },
+    file_unzip: {
+      flag: 'write', approval: false,
+      desc: 'file_unzip — args {"path": string, "dest"?: string}. Extract a .zip archive into a directory inside the working directory.',
+      run: async (a, args) => { if (!a.cwd) throw new Error('no working directory set'); const path = args&&args.path; if (!path) throw new Error('file_unzip needs args.path'); return await nativeInvoke('agent_file_unzip', { req:{ cwd:a.cwd, path, dest:(args&&args.dest)||'' } }); }
+    },
+
+    /* ── CODE EXECUTION (code / shell flags) ── */
+    run_python: {
+      flag: 'code', approval: true,
+      desc: 'run_python — args {"code": string, "packages"?: string[]}. Run Python; optional pip packages are installed first. Returns stdout/stderr (asks permission).',
+      run: async (a, args) => {
+        const code = args&&args.code; if (!code) throw new Error('run_python needs args.code');
+        a._execSeq=(a._execSeq||0)+1; const execId=a.id+'-py'+a._execSeq;
+        let pkgs = args&&args.packages; if (typeof pkgs==='string') pkgs = pkgs.split(/[\s,]+/).filter(Boolean);
+        let pre = '';
+        if (Array.isArray(pkgs) && pkgs.length){
+          pushAct(a, { t:'info', text:'Installing: '+pkgs.join(', ') }); if (AG.selected===a.id) renderStream(a);
+          try{ pre = await nativeInvoke('agent_shell_exec', { req:{ cwd:a.cwd||'', command:'python -m pip install --quiet '+pkgs.map(p=>'"'+p+'"').join(' '), execId:execId+'-pip' } }); }catch(e){ pre = 'pip note: '+((e&&e.message)||e); }
+        }
+        pushAct(a, { t:'code', lang:'python', code:String(code) }); if (AG.selected===a.id) renderDetail(a);
+        const out = await nativeInvoke('agent_run_code', { req:{ language:'python', code:String(code), cwd:a.cwd||'', execId, timeoutSecs:120 } });
+        return (pre?('[pip]\n'+pre+'\n\n'):'')+out;
+      }
+    },
+    run_javascript: {
+      flag: 'code', approval: true,
+      desc: 'run_javascript — args {"code": string}. Run Node.js code and return stdout/stderr (asks permission).',
+      run: async (a, args) => { const code = args&&args.code; if (!code) throw new Error('run_javascript needs args.code'); a._execSeq=(a._execSeq||0)+1; const execId=a.id+'-js'+a._execSeq; pushAct(a,{t:'code',lang:'javascript',code:String(code)}); if(AG.selected===a.id)renderDetail(a); return await nativeInvoke('agent_run_code', { req:{ language:'javascript', code:String(code), cwd:a.cwd||'', execId, timeoutSecs:60 } }); }
+    },
+    run_command: {
+      flag: 'shell', approval: true,
+      desc: 'run_command — args {"command": string, "cwd"?: string}. Run a shell command (asks permission), with an optional working-directory override.',
+      run: async (a, args) => { const command = args&&args.command; if (!command) throw new Error('run_command needs args.command'); a._execSeq=(a._execSeq||0)+1; const execId=a.id+'-cmd'+a._execSeq; return await nativeInvoke('agent_shell_exec', { req:{ cwd:(args&&args.cwd)||a.cwd||'', command:String(command), execId } }); }
+    },
+    run_powershell: {
+      flag: 'shell', approval: true,
+      desc: 'run_powershell — args {"script": string}. Run a PowerShell script (asks permission).',
+      run: async (a, args) => { const script = args&&(args.script||args.code||args.command); if (!script) throw new Error('run_powershell needs args.script'); a._execSeq=(a._execSeq||0)+1; const execId=a.id+'-ps'+a._execSeq; pushAct(a,{t:'code',lang:'powershell',code:String(script)}); if(AG.selected===a.id)renderDetail(a); return await nativeInvoke('agent_run_code', { req:{ language:'powershell', code:String(script), cwd:a.cwd||'', execId, timeoutSecs:120 } }); }
+    },
+
+    /* ── DATA VISUALIZATION (artifact flag) ── */
+    generate_chart: {
+      flag: 'artifact', approval: false,
+      desc: 'generate_chart — args {"data": object|array, "type"?: "bar"|"line"|"pie", "title"?: string}. Render a chart from data (e.g. [{"label":"A","value":3}] or {"A":3,"B":5}) as a PNG shown inline.',
+      run: async (a, args) => {
+        if (!args || args.data==null) throw new Error('generate_chart needs args.data');
+        let data = args.data; if (typeof data==='string'){ try{ data = JSON.parse(data); }catch(_){ } }
+        const type = args.type||'bar', title = args.title||'';
+        const uri = agChart(data, type, title);
+        a.artifacts=a.artifacts||[]; a.artifacts.push({ kind:'image', name:(title||type+' chart'), src:uri });
+        pushAct(a, { t:'image', imgType:'chart', src:uri, caption:(title||type+' chart') }); if (AG.selected===a.id) renderDetail(a);
+        return 'Rendered a '+type+' chart'+(title?' ("'+title+'")':'')+' with '+agNormalizeSeries(data).length+' data points, shown in the activity stream.';
+      }
+    },
+
+    /* ── AI & GENERATION (ai flag) ── */
+    ai_call: {
+      flag: 'ai', approval: false,
+      desc: 'ai_call — args {"prompt": string, "system"?: string}. Ask the LLM a sub-question and get its text answer. Use for reasoning, drafting, or transformations.',
+      run: async (a, args) => { const prompt = args&&args.prompt; if (!prompt) throw new Error('ai_call needs args.prompt'); return (await agLLM(a, prompt, args&&args.system)) || '(no response)'; }
+    },
+    ai_summarize: {
+      flag: 'ai', approval: false,
+      desc: 'ai_summarize — args {"text": string, "length"?: "short"|"medium"|"long"}. Summarize text.',
+      run: async (a, args) => { const text = args&&args.text; if (!text) throw new Error('ai_summarize needs args.text'); const guide = {short:'in 1-2 sentences',medium:'in a short paragraph',long:'in several detailed paragraphs'}[(args&&args.length)||'medium']||'concisely'; return await agLLM(a, 'Summarize the following '+guide+':\n\n'+String(text).slice(0,12000), 'You are a precise summarizer. Output only the summary.'); }
+    },
+    ai_translate: {
+      flag: 'ai', approval: false,
+      desc: 'ai_translate — args {"text": string, "language": string}. Translate text into the target language.',
+      run: async (a, args) => { const text = args&&args.text, lang = args&&args.language; if (!text||!lang) throw new Error('ai_translate needs args.text and args.language'); return await agLLM(a, 'Translate the text below into '+lang+'. Output only the translation:\n\n'+String(text).slice(0,12000)); }
+    },
+    ai_extract: {
+      flag: 'ai', approval: false,
+      desc: 'ai_extract — args {"text": string, "schema": string|object}. Extract structured data matching the schema; returns JSON.',
+      run: async (a, args) => { const text = args&&args.text, schema = args&&args.schema; if (!text||schema==null) throw new Error('ai_extract needs args.text and args.schema'); const sch = typeof schema==='string'?schema:JSON.stringify(schema); return await agLLM(a, 'Extract data from the text into JSON matching these fields/schema: '+sch+'\n\nReturn ONLY valid JSON.\n\nText:\n'+String(text).slice(0,12000), 'You extract structured data. Output only JSON, no prose.'); }
+    },
+    ai_classify: {
+      flag: 'ai', approval: false,
+      desc: 'ai_classify — args {"text": string, "categories": string[]}. Classify the text into one of the given categories.',
+      run: async (a, args) => { const text = args&&args.text; let cats = args&&args.categories; if (typeof cats==='string') cats = cats.split(',').map(s=>s.trim()).filter(Boolean); if (!text||!Array.isArray(cats)||!cats.length) throw new Error('ai_classify needs args.text and args.categories[]'); return await agLLM(a, 'Classify the text into exactly one of these categories: '+cats.join(', ')+'. Answer with only the category name.\n\nText:\n'+String(text).slice(0,8000)); }
+    },
+    ai_image_analyze: {
+      flag: 'ai', approval: false,
+      desc: 'ai_image_analyze — args {"image_path": string, "question"?: string}. Analyze a local image with a vision model.',
+      run: async (a, args) => {
+        const path = args&&(args.image_path||args.path); if (!path) throw new Error('ai_image_analyze needs args.image_path');
+        const abs = agAbs(a, path);
+        const df = await nativeInvoke('read_dropped_file', { path: abs });
+        if (!df || df.kind!=='image' || !df.content) throw new Error('not a readable image: '+abs);
+        pushAct(a, { t:'image', imgType:'image', src:df.content, caption:df.name||path }); if (AG.selected===a.id) renderDetail(a);
+        return (await visionDescribe(df.content, (args&&args.question)||'')) || 'No vision-capable provider is configured — add a Groq, Gemini, or OpenRouter key to analyze images.';
+      }
+    },
+    ai_generate_report: {
+      flag: 'ai', approval: false,
+      desc: 'ai_generate_report — args {"data": string|object, "template"?: string}. Turn data/findings into a well-structured Markdown report.',
+      run: async (a, args) => { const data = args&&args.data; if (data==null) throw new Error('ai_generate_report needs args.data'); const d = typeof data==='string'?data:JSON.stringify(data,null,2); const tmpl = (args&&args.template)?('Follow this structure/template:\n'+args.template+'\n\n'):''; return await agLLM(a, tmpl+'Write a clear, well-structured Markdown report based on this data:\n\n'+d.slice(0,14000), 'You are a professional report writer. Use Markdown headings, bullets, and tables where useful.'); }
+    },
+
+    /* ── MEMORY & NOTES (memory flag) ── */
+    memory_save: {
+      flag: 'memory', approval: false,
+      desc: 'memory_save — args {"key": string, "value": string}. Save a fact to long-term memory (Memory MCP if running, else local store).',
+      run: async (a, args) => {
+        const key = args&&args.key, value = args&&args.value; if (!key||value==null) throw new Error('memory_save needs args.key and args.value');
+        try{ const id = await window.kiteMCP.ensureServer('memory'); await window.kiteMCP.callTool(id, 'create_entities', { entities:[{ name:String(key), entityType:'fact', observations:[String(value)] }] }, { noApproval:true }); return 'Saved "'+key+'" to Memory MCP.'; }catch(_){ }
+        const mem = agLoad(agMemLS); const ex = mem.find(m=>m.key===key); if (ex) ex.value = String(value); else mem.push({ key:String(key), value:String(value), ts:Date.now() }); agSave(agMemLS, mem); return 'Saved "'+key+'" to local memory.';
+      }
+    },
+    memory_recall: {
+      flag: 'memory', approval: false,
+      desc: 'memory_recall — args {"query": string}. Search long-term memory for matching facts.',
+      run: async (a, args) => {
+        const query = args&&args.query; if (!query) throw new Error('memory_recall needs args.query');
+        try{ const id = await window.kiteMCP.ensureServer('memory'); const r = await window.kiteMCP.callTool(id, 'search_nodes', { query:String(query) }, { noApproval:true }); if (r && String(r).trim()) return String(r).slice(0,4000); }catch(_){ }
+        const q = String(query).toLowerCase(); const hits = agLoad(agMemLS).filter(m=>(m.key+' '+m.value).toLowerCase().includes(q));
+        return hits.length ? hits.map(m=>'• '+m.key+': '+m.value).join('\n') : '(no matching memories)';
+      }
+    },
+    memory_list: {
+      flag: 'memory', approval: false,
+      desc: 'memory_list — args {}. List saved memories.',
+      run: async () => { const mem = agLoad(agMemLS); return mem.length ? mem.map(m=>'• '+m.key+': '+String(m.value).slice(0,80)).join('\n') : '(no memories saved locally)'; }
+    },
+    note_create: {
+      flag: 'memory', approval: false,
+      desc: 'note_create — args {"title": string, "content": string}. Save a titled note.',
+      run: async (a, args) => { const title = args&&args.title; if (!title) throw new Error('note_create needs args.title'); const notes = agLoad(agNotesLS); notes.push({ title:String(title), content:String((args&&args.content)||''), ts:Date.now() }); agSave(agNotesLS, notes); return 'Saved note "'+title+'" ('+notes.length+' notes total).'; }
+    },
+    note_search: {
+      flag: 'memory', approval: false,
+      desc: 'note_search — args {"query": string}. Search saved notes by title/content.',
+      run: async (a, args) => { const q = String((args&&args.query)||'').toLowerCase(); const hits = agLoad(agNotesLS).filter(n=>(n.title+' '+n.content).toLowerCase().includes(q)); return hits.length ? hits.map(n=>'### '+n.title+'\n'+String(n.content).slice(0,300)).join('\n\n') : '(no matching notes)'; }
+    },
+
+    /* ── CREATIVE (creative flag) ── */
+    image_generate: {
+      flag: 'creative', approval: false,
+      desc: 'image_generate — args {"prompt": string}. Generate an image from a text prompt (Pollinations, no key needed), shown inline in the activity stream.',
+      run: async (a, args) => {
+        const prompt = args&&args.prompt; if (!prompt) throw new Error('image_generate needs args.prompt');
+        const seed = (a._imgSeq=(a._imgSeq||0)+1);
+        const url = 'https://image.pollinations.ai/prompt/'+encodeURIComponent(String(prompt))+'?width=1024&height=1024&nologo=true&seed='+((Date.now()%100000)+seed);
+        pushAct(a, { t:'info', text:'Generating image…' }); if (AG.selected===a.id) renderStream(a);
+        const r = await fetch(url); if (!r.ok) throw new Error('image generation failed (HTTP '+r.status+')');
+        const blob = await r.blob();
+        const uri = await new Promise((res,rej)=>{ const fr=new FileReader(); fr.onload=()=>res(fr.result); fr.onerror=rej; fr.readAsDataURL(blob); });
+        a.artifacts=a.artifacts||[]; a.artifacts.push({ kind:'image', name:String(prompt).slice(0,40), src:uri });
+        pushAct(a, { t:'image', imgType:'image', src:uri, caption:String(prompt).slice(0,60) }); if (AG.selected===a.id) renderDetail(a);
+        return 'Generated an image for "'+String(prompt).slice(0,60)+'" and shown it in the activity stream.';
+      }
+    },
+    audio_generate: {
+      flag: 'creative', approval: false,
+      desc: 'audio_generate — args {"text": string}. Speak text aloud via the system speech synthesizer.',
+      run: async (a, args) => { const text = args&&args.text; if (!text) throw new Error('audio_generate needs args.text'); try{ if (window.speechSynthesis){ window.speechSynthesis.speak(new SpeechSynthesisUtterance(String(text).slice(0,600))); return 'Speaking the text aloud ('+String(text).length+' chars).'; } }catch(_){ } return 'Speech synthesis is unavailable in this environment.'; }
+    },
+    document_create: {
+      flag: 'creative', approval: false,
+      desc: 'document_create — args {"title": string, "content": string, "format"?: "md"|"txt"|"html"}. Create a document artifact (download button); also written to the working directory if one is set.',
+      run: async (a, args) => {
+        const title = args&&args.title; if (!title) throw new Error('document_create needs args.title');
+        const fmt = String((args&&args.format)||'md').toLowerCase();
+        let content = String((args&&args.content)||'');
+        let name = String(title).replace(/[^\w.\- ]+/g,'').trim() || 'document';
+        if (fmt==='html'){ content = '<!doctype html><meta charset="utf-8"><title>'+esc2(title)+'</title>\n<body>\n'+content+'\n</body>'; if (!/\.html?$/.test(name)) name += '.html'; }
+        else if (fmt==='txt'){ if (!/\.txt$/.test(name)) name += '.txt'; }
+        else { content = '# '+title+'\n\n'+content; if (!/\.md$/.test(name)) name += '.md'; }
+        a.artifacts=a.artifacts||[]; a.artifacts.push({ kind:'file', name, type:'report', content, size:content.length });
+        pushAct(a, { t:'artifact', name, atype:'report', size:content.length, content }); if (AG.selected===a.id) renderDetail(a);
+        if (a.cwd){ try{ await nativeInvoke('agent_file_write', { req:{ cwd:a.cwd, path:name, content } }); return 'Created "'+name+'" ('+content.length+' bytes) and wrote it to the working directory.'; }catch(_){ } }
+        return 'Created "'+name+'" ('+content.length+' bytes), shown with a download button.';
+      }
+    },
+
+    /* ── PRODUCTIVITY (productivity flag) ── */
+    reminder_set: {
+      flag: 'productivity', approval: false,
+      desc: 'reminder_set — args {"message": string, "minutes": number}. Set a reminder that fires after N minutes (announced by voice + toast).',
+      run: async (a, args) => { const message = args&&args.message; const mins = parseFloat(args&&args.minutes); if (!message||!(mins>0)) throw new Error('reminder_set needs args.message and args.minutes>0'); const ms = Math.min(mins*60000, 86400000); setTimeout(()=>{ try{ if (typeof toast==='function') toast('Reminder: '+message,'var(--teal)'); if (window.speechSynthesis) window.speechSynthesis.speak(new SpeechSynthesisUtterance('Reminder: '+message)); }catch(_){ } }, ms); return 'Reminder set for '+mins+' minute(s) from now: "'+message+'".'; }
+    },
+    timer_start: {
+      flag: 'productivity', approval: false,
+      desc: 'timer_start — args {"seconds": number, "label"?: string}. Start a countdown timer; announces when it finishes.',
+      run: async (a, args) => { const secs = parseFloat(args&&args.seconds); if (!(secs>0)) throw new Error('timer_start needs args.seconds>0'); const label = (args&&args.label)||'Timer'; const ms = Math.min(secs*1000, 86400000); setTimeout(()=>{ try{ if (typeof toast==='function') toast(label+' done ('+secs+'s)','var(--teal)'); if (window.speechSynthesis) window.speechSynthesis.speak(new SpeechSynthesisUtterance(label+' finished')); }catch(_){ } }, ms); return label+' started for '+secs+' second(s).'; }
     }
   };
   function toolsFor(a){
@@ -5870,17 +6533,23 @@ window.kiteMCP = (function(){
     const p = n => String(n).padStart(2, '0');
     return p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds());
   }
-  /* tool → glyph + colour class for the activity stream (geometric symbols, no emoji) */
+  /* tool → short text tag + colour class for the activity stream (no emoji) */
   function toolIconInfo(name, ask){
     const n = String(name || '');
-    if (n.indexOf('mcp__') === 0) return { g: '▸', cls: 'mcp' };
-    if (window.kiteConnections){ try{ if (window.kiteConnections.allTools().some(t => t.name === n)) return { g: '◆', cls: 'conn' }; }catch(_){ } }
-    const map = {
-      web_fetch: '↗', file_read: '▤', file_write: '✎', shell_exec: '>_',
-      spawn_subagent: '⑃', screenshot_url: '▣', page_click: '▣', page_extract: '▣',
-      page_fill: '▣', run_code: '‹/›', save_artifact: '▦'
-    };
-    return { g: map[n] || '●', cls: ask ? 'ask' : '' };
+    if (n.indexOf('mcp__') === 0) return { tag: 'MCP', cls: 'mcp' };
+    if (window.kiteConnections){ try{ if (window.kiteConnections.allTools().some(t => t.name === n)) return { tag: 'CONN', cls: ask ? 'ask' : 'conn' }; }catch(_){ } }
+    let tag = 'TOOL';
+    if (/^web_|^page_|^screenshot/.test(n)) tag = 'WEB';
+    else if (/^file_|^parse_/.test(n)) tag = 'FILE';
+    else if (/^run_|_exec$|^shell/.test(n)) tag = 'RUN';
+    else if (/^ai_/.test(n)) tag = 'AI';
+    else if (/^memory_|^note_/.test(n)) tag = 'MEM';
+    else if (/chart/.test(n)) tag = 'CHART';
+    else if (/^image_|^audio_/.test(n)) tag = 'GEN';
+    else if (/spawn/.test(n)) tag = 'SUB';
+    else if (/artifact|document/.test(n)) tag = 'DOC';
+    else if (/reminder|timer/.test(n)) tag = 'TASK';
+    return { tag, cls: ask ? 'ask' : '' };
   }
   function account(a, promptStr, respStr){
     a.tokIn += estTok(promptStr);
@@ -5919,8 +6588,8 @@ window.kiteMCP = (function(){
     a.running = false;
     a.endedAt = Date.now();
     if (status === 'done') pushAct(a, { t: 'done', text: msg || '(no result)' });
-    else if (status === 'error') pushAct(a, { t: 'error', text: '✗ ' + (msg || 'failed') });
-    else if (status === 'cancelled') pushAct(a, { t: 'error', text: '■ cancelled' });
+    else if (status === 'error') pushAct(a, { t: 'error', text: (msg || 'failed'), retry: true });
+    else if (status === 'cancelled') pushAct(a, { t: 'error', text: 'Cancelled', retry: true });
     a.result = msg;
     renderList(); if (AG.selected === a.id) renderDetail(a);
     updateBadge();
@@ -6155,7 +6824,7 @@ window.kiteMCP = (function(){
       catch(e){ result = 'ERROR: ' + ((e && e.message) || String(e)); isErr = true; }
       if (a.cancelled) return finish(a, 'cancelled');
       if (!isErr && /^ERROR[:\s]/i.test(String(result))) isErr = true;
-      pushAct(a, { t: 'toolresult', text: String(result).slice(0, 600), err: isErr });
+      pushAct(a, { t: 'toolresult', text: String(result).slice(0, 2000), err: isErr });
       a.history.push({ role: 'user', content: 'Tool result (' + act.tool + '):\n' + String(result).slice(0, 4000) });
       renderList(); if (AG.selected === a.id) renderDetail(a);
     }
@@ -6239,88 +6908,130 @@ window.kiteMCP = (function(){
   }
 
   /* ── rendering: detail + stream ── */
+  /* ── activity-stream rich helpers (text badges, no emoji) ── */
+  function agBadge(label, cls){ return '<span class="agb agb-'+cls+'">'+label+'</span>'; }
+  function agTableHTML(rows){
+    const cols = Math.max.apply(null, rows.map(r=>r.length));
+    const cell = (r,i) => esc2(r[i]!=null ? r[i] : '');
+    let h = '<table class="ag-tbl"><thead><tr>';
+    for (let i=0;i<cols;i++) h += '<th>'+cell(rows[0],i)+'</th>';
+    h += '</tr></thead><tbody>';
+    for (let r=1;r<rows.length;r++){ h += '<tr>'; for (let i=0;i<cols;i++) h += '<td>'+cell(rows[r],i)+'</td>'; h += '</tr>'; }
+    return h + '</tbody></table>';
+  }
+  // detect a markdown pipe table or a consistent tab-separated block
+  function agTable(s){
+    const lines = String(s).split('\n').map(l=>l.replace(/\s+$/,'')).filter(l=>l.trim()!=='');
+    if (lines.length < 2 || lines.length > 60) return null;
+    if (lines.filter(l=>l.includes('|')).length === lines.length){
+      const rows = lines.filter(l=>!/^\s*\|?[\s:|-]{3,}\|?\s*$/.test(l)).map(l=>l.replace(/^\s*\|/,'').replace(/\|\s*$/,'').split('|').map(c=>c.trim()));
+      if (rows.length >= 2 && rows[0].length >= 2) return agTableHTML(rows);
+      return null;
+    }
+    const counts = lines.map(l=>(l.match(/\t/g)||[]).length);
+    if (counts[0] >= 1 && counts.every(c=>c===counts[0])) return agTableHTML(lines.map(l=>l.split('\t')));
+    return null;
+  }
+  // render a tool result: JSON → pretty, TSV/pipe → table, else plain text
+  function agRenderResult(txt){
+    const s = String(txt), t = s.trim();
+    if (t && (t[0]==='{'||t[0]==='[') && t.length>1){
+      try{ return '<pre class="ag-json">'+esc2(JSON.stringify(JSON.parse(t), null, 2))+'</pre>'; }catch(_){ }
+    }
+    const tbl = agTable(s); if (tbl) return tbl;
+    return esc2(s);
+  }
+
   function lineHTML(it){
     switch(it.t){
-      case 'goal':        return '<div class="ag-line goal"><b>❯</b> '+esc2(it.text)+'</div>';
-      case 'thinking':    return '<div class="ag-line thinking">Thinking…</div>';
-      case 'thinking-done':return '<div class="ag-line thinking">'+esc2(it.text)+'</div>';
+      case 'goal':        return '<div class="ag-l">'+agBadge('GOAL','goal')+'<div class="ag-l-body" style="color:#e6e6e6;font-weight:600">'+esc2(it.text)+'</div></div>';
+      case 'thinking':    return '<div class="ag-l">'+agBadge('THINKING','think')+'<div class="ag-l-body" style="color:#6a6a6a;font-style:italic">Thinking…</div></div>';
+      case 'thinking-done':return '<div class="ag-l">'+agBadge('THINKING','think')+'<div class="ag-l-body" style="color:#8a8a90;font-style:italic">'+esc2(it.text)+'</div></div>';
+      case 'subagent':    return '<div class="ag-l ag-sub-line">'+agBadge('SUBAGENT','sub')+'<div class="ag-l-body" style="color:#c9a5f0">'+esc2(it.text)+'</div></div>';
       case 'toolcall':    {
         const info = toolIconInfo(it.name, it.ask);
-        let argStr = ''; try{ argStr = it.args ? JSON.stringify(it.args, null, 2) : ''; }catch(_){ argStr = String(it.args); }
-        const hasArgs = argStr && argStr !== '{}' && argStr !== 'null';
+        const bcls = info.cls==='ask' ? 'approval' : info.cls==='mcp' ? 'code' : info.cls==='conn' ? 'file' : 'tool';
+        let condensed = ''; try{ const j = it.args ? JSON.stringify(it.args) : ''; if (j && j!=='{}' && j!=='null') condensed = esc2(j.slice(0,90)); }catch(_){ }
+        let pretty = ''; try{ pretty = it.args ? JSON.stringify(it.args, null, 2) : ''; }catch(_){ pretty = String(it.args); }
+        const hasArgs = pretty && pretty !== '{}' && pretty !== 'null';
         return '<details class="ag-tc">'
-          + '<summary><span class="ag-tc-ico '+info.cls+'">'+info.g+'</span><span class="ag-tc-name">'+esc2(it.name)+'</span>'
+          + '<summary>'+agBadge(info.tag, bcls)+'<span class="ag-tc-name">'+esc2(it.name)+'</span>'
+          + (condensed ? '<span class="ag-tc-args">'+condensed+'</span>' : '')
           + (hasArgs ? '<span class="ag-tc-chev">▸</span>' : '') + '</summary>'
-          + (hasArgs ? '<pre>'+esc2(argStr)+'</pre>' : '') + '</details>';
+          + (hasArgs ? '<pre>'+esc2(pretty)+'</pre>' : '') + '</details>';
       }
       case 'toolresult':  {
         const txt = String(it.text || '');
         const attr = esc2(txt).replace(/"/g,'&quot;');
-        const col = it.err ? 'color:var(--coral,#ff6b6b)' : '';
-        return '<div class="ag-line toolresult" style="display:flex;align-items:flex-start;gap:7px;'+col+'">'
-          + '<span style="flex:none">'+(it.err?'✗':'+')+'</span>'
-          + '<span style="flex:1;min-width:0;white-space:pre-wrap;word-break:break-word">'+esc2(txt)+'</span>'
-          + '<button class="ag-copy" data-copy="'+attr+'" onclick="window.__agCopy&&window.__agCopy(this)">copy</button></div>';
+        return '<div class="ag-l">'+agBadge(it.err?'ERROR':'RESULT', it.err?'error':'result')
+          + '<div class="ag-l-body"'+(it.err?' style="color:var(--coral,#ff6b6b)"':'')+'>'+agRenderResult(txt)
+          + ' <button class="ag-copy" data-copy="'+attr+'" onclick="window.__agCopy&&window.__agCopy(this)">copy</button></div></div>';
       }
-      case 'msg':         return '<div class="ag-line msg">→ you: '+esc2(it.text)+'</div>';
-      case 'info':        return '<div class="ag-line info">'+esc2(it.text)+'</div>';
+      case 'msg':         return '<div class="ag-l">'+agBadge('YOU','msg')+'<div class="ag-l-body" style="color:var(--sky,#61afef)">'+esc2(it.text)+'</div></div>';
+      case 'info':        return '<div class="ag-l">'+agBadge('INFO','info')+'<div class="ag-l-body" style="color:#7a7a7a">'+esc2(it.text)+'</div></div>';
       case 'coord-plan': {
         const rows = (it.workers||[]).map(w => {
-          const dot = w.status==='done'?'✓':w.status==='running'?'⟳':w.status==='error'?'✗':w.status==='cancelled'?'■':'•';
+          const dot = w.status==='done'?'DONE':w.status==='running'?'RUN':w.status==='error'?'ERR':w.status==='cancelled'?'STOP':'WAIT';
           const col = w.status==='done'?'var(--teal,#2dd4bf)':w.status==='running'?'#e0c07b':w.status==='error'?'var(--coral,#ff6b6b)':'var(--t3,#8a8a99)';
-          return '<div style="display:flex;gap:8px;padding:3px 0;align-items:baseline"><span style="color:'+col+';flex:none;width:12px">'+dot+'</span>'
+          return '<div style="display:flex;gap:8px;padding:3px 0;align-items:baseline"><span style="color:'+col+';flex:none;width:34px;font-family:var(--mono);font-size:8.5px;font-weight:700;letter-spacing:.4px">'+dot+'</span>'
                + '<b style="color:var(--t1)">'+esc2(w.name||'Worker')+'</b> <span style="color:var(--t3);font-size:11px">'+esc2((w.goal||'').slice(0,90))+'</span></div>';
         }).join('');
         const done = (it.workers||[]).filter(w => w.status==='done').length;
         return '<div class="ag-line" style="border:1px solid var(--border);border-radius:8px;padding:9px 11px;margin:6px 0">'
-             + '<div style="font-family:var(--mono);font-size:9.5px;letter-spacing:.5px;color:var(--teal,#2dd4bf);text-transform:uppercase;margin-bottom:5px">⚙ Coordinator · '+done+'/'+(it.workers||[]).length+' workers complete</div>'
+             + '<div style="font-family:var(--mono);font-size:9.5px;letter-spacing:.5px;color:var(--teal,#2dd4bf);text-transform:uppercase;margin-bottom:5px">Coordinator · '+done+'/'+(it.workers||[]).length+' workers complete</div>'
              + rows + '</div>';
       }
-      case 'image':       return '<div class="ag-line" style="margin:7px 0">'
-                               + '<div style="font-family:var(--mono);font-size:9.5px;letter-spacing:.5px;color:var(--teal,#2dd4bf);text-transform:uppercase;margin-bottom:5px">Screenshot'+(it.caption?' · '+esc2(it.caption):'')+'</div>'
-                               + '<img src="'+esc2(it.src)+'" alt="screenshot" style="max-width:100%;border:1px solid var(--border);border-radius:8px;display:block;cursor:zoom-in" onclick="window.open(this.src,\'_blank\')"></div>';
+      case 'image': {
+        const kind = it.imgType==='chart' ? 'CHART' : it.imgType==='screenshot' ? 'SCREENSHOT' : 'IMAGE';
+        return '<div class="ag-l">'+agBadge(kind,'image')
+             + '<div class="ag-l-body"><img src="'+esc2(it.src)+'" alt="'+kind.toLowerCase()+'" style="max-width:400px;width:100%;border:1px solid var(--border);border-radius:8px;display:block;cursor:zoom-in" onclick="window.open(this.src,\'_blank\')">'
+             + (it.caption?'<div class="ag-imgcap">'+esc2(it.caption)+'</div>':'')+'</div></div>';
+      }
       case 'code': {
         const label = esc2(it.lang || 'code');
         const attrCode = esc2(it.code).replace(/"/g,'&quot;');
-        return '<div class="ag-line" style="margin:7px 0">'
-             + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span style="font-family:var(--mono);font-size:9.5px;letter-spacing:.5px;color:#c9a5f0;text-transform:uppercase">‹/› '+label+'</span>'
-             + '<button onclick="(function(b){try{navigator.clipboard.writeText(b.getAttribute(\'data-code\'));b.textContent=\'copied ✓\';setTimeout(function(){b.textContent=\'copy\'},1200);}catch(e){}})(this)" data-code="'+attrCode+'" style="margin-left:auto;font-family:var(--mono);font-size:9.5px;color:var(--t3);background:none;border:1px solid var(--border);border-radius:5px;padding:2px 7px;cursor:pointer">copy</button></div>'
-             + '<pre style="margin:0;background:var(--surface,#12121a);border:1px solid var(--border);border-radius:8px;padding:10px 12px;overflow:auto;max-height:300px"><code style="font-family:var(--mono);font-size:12px;line-height:1.5;color:var(--t1);white-space:pre">'+esc2(it.code)+'</code></pre></div>';
+        return '<div class="ag-l">'+agBadge('CODE','code')
+             + '<div class="ag-l-body"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span style="font-family:var(--mono);font-size:9.5px;letter-spacing:.5px;color:#c9a5f0;text-transform:uppercase">'+label+'</span>'
+             + '<button onclick="(function(b){try{navigator.clipboard.writeText(b.getAttribute(\'data-code\'));b.textContent=\'copied\';setTimeout(function(){b.textContent=\'copy\'},1200);}catch(e){}})(this)" data-code="'+attrCode+'" style="margin-left:auto;font-family:var(--mono);font-size:9.5px;color:var(--t3);background:none;border:1px solid var(--border);border-radius:5px;padding:2px 7px;cursor:pointer">copy</button></div>'
+             + '<pre style="margin:0;background:var(--surface,#12121a);border:1px solid var(--border);border-radius:8px;padding:10px 12px;overflow:auto;max-height:300px"><code style="font-family:var(--mono);font-size:12px;line-height:1.5;color:var(--t1);white-space:pre">'+esc2(it.code)+'</code></pre></div></div>';
       }
       case 'artifact': {
         const href = 'data:text/plain;charset=utf-8,'+encodeURIComponent(it.content||'');
         const kb = it.size>1024 ? (it.size/1024).toFixed(1)+' KB' : (it.size||0)+' B';
-        const icon = it.atype==='code'?'‹/›':it.atype==='data'?'▤':'▦';
         const safeName = esc2(String(it.name||'artifact').replace(/["<>]/g,''));
-        return '<div class="ag-line" style="display:flex;align-items:center;gap:10px;border:1px solid var(--border);border-radius:8px;padding:8px 11px;margin:7px 0">'
-             + '<span style="font-size:16px;flex:none">'+icon+'</span>'
+        return '<div class="ag-l">'+agBadge('FILE','file')
+             + '<div class="ag-l-body" style="display:flex;align-items:center;gap:10px;border:1px solid var(--border);border-radius:8px;padding:8px 11px">'
              + '<div style="flex:1;min-width:0"><div style="color:var(--t1);font-weight:600;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc2(it.name)+'</div>'
              + '<div style="color:var(--t3);font-size:10.5px;font-family:var(--mono)">'+esc2(it.atype||'text')+' · '+kb+'</div></div>'
-             + '<a href="'+href+'" download="'+safeName+'" style="flex:none;color:var(--teal,#2dd4bf);text-decoration:none;font-size:11px;font-family:var(--mono);border:1px solid var(--teal-border,rgba(45,212,191,.35));border-radius:6px;padding:4px 10px">Download</a></div>';
+             + '<a href="'+href+'" download="'+safeName+'" style="flex:none;color:var(--teal,#2dd4bf);text-decoration:none;font-size:11px;font-family:var(--mono);border:1px solid var(--teal-border,rgba(45,212,191,.35));border-radius:6px;padding:4px 10px">Download</a></div></div>';
       }
       case 'done': {
         const md = (typeof chatMarkdown === 'function') ? chatMarkdown(String(it.text||'')) : esc2(it.text);
-        return '<div class="ag-line done"><div style="display:flex;gap:7px;align-items:flex-start"><span style="color:var(--teal,#2dd4bf);flex:none">✓</span><div class="ag-md" style="flex:1;min-width:0;overflow:auto">'+md+'</div></div></div>';
+        return '<div class="ag-l">'+agBadge('DONE','done')+'<div class="ag-l-body ag-md" style="overflow:auto">'+md+'</div></div>';
       }
-      case 'error':       return '<div class="ag-line error">'+esc2(it.text)+'</div>';
+      case 'error': {
+        const retry = it.retry ? '<button class="ag-retry" onclick="window.__agRetry&&window.__agRetry()">Retry</button>' : '';
+        return '<div class="ag-l">'+agBadge('ERROR','error')+'<div class="ag-l-body" style="color:var(--coral,#ff6b6b)">'+esc2(it.text)+retry+'</div></div>';
+      }
       case 'approval': {
         const q = it.tool==='file_write' ? 'Allow file write?'
                 : it.tool==='shell_exec' ? 'Allow shell command?'
                 : 'Allow '+it.tool+'?';
-        if (it.resolved) return '<div class="ag-approval resolved"><div class="ag-approval-q">'+esc2(q)+' <code>'+esc2(it.detail)+'</code></div><div>'+(it.resolved==='yes'?'✓ approved':'✗ denied')+'</div></div>';
-        return '<div class="ag-approval"><div class="ag-approval-q">'+esc2(q)+'<br><code>'+esc2(it.detail)+'</code></div>'
+        if (it.resolved) return '<div class="ag-l">'+agBadge('APPROVAL','approval')+'<div class="ag-l-body"><div class="ag-approval resolved"><div class="ag-approval-q">'+esc2(q)+' <code>'+esc2(it.detail)+'</code></div><div>'+(it.resolved==='yes'?'approved':'denied')+'</div></div></div></div>';
+        return '<div class="ag-l">'+agBadge('APPROVAL','approval')+'<div class="ag-l-body"><div class="ag-approval"><div class="ag-approval-q">'+esc2(q)+'<br><code>'+esc2(it.detail)+'</code></div>'
              + '<div class="ag-approval-btns"><button class="ag-ap-yes" data-approve="'+it.apid+'">Approve</button>'
-             + '<button class="ag-ap-no" data-deny="'+it.apid+'">Deny</button></div></div>';
+             + '<button class="ag-ap-no" data-deny="'+it.apid+'">Deny</button></div></div></div></div>';
       }
       default:            return '';
     }
   }
+  window.__agRetry = function(){ const a = AG.agents.get(AG.selected); if (!a || a.running) return; a.cancelled = false; runAgent(a); };
   window.__agCopy = function(btn){
     try{
       const el = document.createElement('textarea');
       el.innerHTML = btn.getAttribute('data-copy') || '';
       navigator.clipboard.writeText(el.value);
-      const o = btn.textContent; btn.textContent = 'copied ✓';
+      const o = btn.textContent; btn.textContent = 'copied';
       setTimeout(() => { btn.textContent = o; }, 1100);
     }catch(_){ }
   };
@@ -6363,9 +7074,9 @@ window.kiteMCP = (function(){
         }
         const href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(art.content || '');
         const kb = art.size > 1024 ? (art.size/1024).toFixed(1) + ' KB' : (art.size||0) + ' B';
-        const ico = art.type === 'code' ? '‹/›' : '▤';
+        const ico = art.type === 'code' ? 'CODE' : art.type === 'data' ? 'DATA' : art.type === 'report' ? 'DOC' : 'FILE';
         return '<div style="display:flex;align-items:center;gap:10px;border:1px solid var(--border);border-radius:8px;padding:7px 10px">'
-          + '<span style="flex:none;font-family:var(--mono);color:var(--t2)">'+ico+'</span>'
+          + '<span class="agb agb-file" style="flex:none">'+ico+'</span>'
           + '<div style="flex:1;min-width:0"><div style="font-size:12px;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc2(art.name)+'</div><div style="font-family:var(--mono);font-size:10px;color:var(--t3)">'+esc2(art.type||'text')+' · '+kb+'</div></div>'
           + '<a href="'+href+'" download="'+esc2(String(art.name).replace(/["<>]/g,''))+'" style="flex:none;color:var(--teal,#2dd4bf);text-decoration:none;font-size:11px;font-family:var(--mono);border:1px solid var(--border);border-radius:6px;padding:3px 9px">Download</a></div>';
       }).join('') + '</div>';
@@ -6392,10 +7103,10 @@ window.kiteMCP = (function(){
       }
       const href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(art.content || '');
       const kb = art.size > 1024 ? (art.size/1024).toFixed(1) + ' KB' : (art.size||0) + ' B';
-      const ico = art.type === 'code' ? '‹/›' : art.type === 'data' ? '▤' : '▦';
+      const ico = art.type === 'code' ? 'CODE' : art.type === 'data' ? 'DATA' : art.type === 'report' ? 'DOC' : 'FILE';
       const preview = String(art.content || '').slice(0, 160);
       return '<div style="border:1px solid var(--border);border-radius:8px;padding:9px 11px">'
-        + '<div style="display:flex;align-items:center;gap:10px"><span style="flex:none;font-family:var(--mono);color:var(--t2)">'+ico+'</span>'
+        + '<div style="display:flex;align-items:center;gap:10px"><span class="agb agb-file" style="flex:none">'+ico+'</span>'
         + '<div style="flex:1;min-width:0"><div style="font-size:12.5px;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc2(art.name)+'</div><div style="font-family:var(--mono);font-size:10px;color:var(--t3)">'+esc2(art.type||'text')+' · '+kb+'</div></div>'
         + '<a href="'+href+'" download="'+esc2(String(art.name).replace(/["<>]/g,''))+'" style="flex:none;color:var(--teal,#2dd4bf);text-decoration:none;font-size:11px;font-family:var(--mono);border:1px solid var(--border);border-radius:6px;padding:4px 10px">Download</a></div>'
         + (preview ? '<div style="margin-top:7px;font-family:var(--mono);font-size:10.5px;color:var(--t3);white-space:pre-wrap;word-break:break-word;max-height:64px;overflow:hidden">'+esc2(preview)+(art.content&&art.content.length>160?'…':'')+'</div>' : '')
@@ -6528,6 +7239,62 @@ window.kiteMCP = (function(){
   }
   function closeModal(){ $('ag-modal').style.display = 'none'; }
 
+  /* ── quick-start presets: pre-fill the New Agent form with a goal + tools ── */
+  const PRESETS = [
+    { key:'research', name:'Research Anything', desc:'Search the web, read sources, write a report',
+      goal:'Research [topic] and write a detailed, well-sourced report.',
+      flags:['web','ai','write','artifact'], ext:['web_search'] },
+    { key:'scrape', name:'Scrape & Analyze', desc:'Scrape a page, parse the data, chart it',
+      goal:'Scrape [URL], extract the data, analyze it, and chart the results.',
+      flags:['web','read','code','artifact'], ext:[] },
+    { key:'code', name:'Code Assistant', desc:'Write, run and fix code in any language',
+      goal:'Help me with [coding task] in [language]. Write it, run it, fix any errors.',
+      flags:['code','read','write'], ext:[] },
+    { key:'data', name:'Data Analyst', desc:'Load a data file, analyze, and chart',
+      goal:'Analyze the data in [file] and create charts of the key findings.',
+      flags:['read','code','artifact'], ext:[] },
+    { key:'email', name:'Email Assistant', desc:'Read recent mail, summarize, draft replies',
+      goal:'Read my recent emails and [action].',
+      flags:['ai'], ext:['gmail_list_emails','gmail_read_email','gmail_send'] },
+    { key:'github', name:'GitHub Assistant', desc:'Review repos, issues and pull requests',
+      goal:'Review my GitHub repos and [action].',
+      flags:['ai'], ext:['github_list_repos','github_list_issues','github_list_prs','github_get_file'] },
+    { key:'briefing', name:'Daily Briefing', desc:'News, email and tasks, delivered to Discord',
+      goal:'Give me a morning briefing: top news, my recent emails, and anything needing attention. Post it to Discord.',
+      flags:['web','ai'], ext:['web_search','gmail_list_emails','discord_send_message'] },
+    { key:'image', name:'Image Generator', desc:'Generate images from a description',
+      goal:'Generate images of [description].',
+      flags:['creative','write'], ext:[] }
+  ];
+  const FLAG_IDS = ['web','read','write','shell','spawn','browser','code','artifact','ai','memory','creative','productivity'];
+  function renderPresets(){
+    const host = $('ag-presets'); if (!host) return;
+    host.innerHTML = PRESETS.map(p => {
+      const n = p.flags.length + (p.ext ? p.ext.length : 0);
+      return '<button class="ag-preset" onclick="kiteAgents&&kiteAgents.applyPreset(\''+p.key+'\')">'
+        + '<div class="ag-preset-name">'+esc2(p.name)+'</div>'
+        + '<div class="ag-preset-desc">'+esc2(p.desc)+'</div>'
+        + '<div class="ag-preset-badge">'+n+' tools</div></button>';
+    }).join('');
+  }
+  function applyPreset(key){
+    const p = PRESETS.find(x => x.key === key); if (!p) return;
+    openModal();                                   // resets form + renders ext tools
+    const nm = $('ag-f-name'), tk = $('ag-f-task');
+    if (nm) nm.value = p.name;
+    if (tk) tk.value = p.goal;
+    FLAG_IDS.forEach(f => { const cb = $('ag-t-'+f); if (cb) cb.checked = p.flags.indexOf(f) >= 0; });
+    // external Connections/MCP tools only exist as checkboxes when connected/running
+    (p.ext || []).forEach(name => {
+      const sel = (window.CSS && CSS.escape) ? CSS.escape(name) : name;
+      const cb = document.querySelector('#ag-ext-tools .ag-ext-cb[data-tool="'+sel+'"]');
+      if (cb) cb.checked = true;
+    });
+    if (window.kiteAgentTools) window.kiteAgentTools.sync();
+    // select the first [placeholder] so the user can type over it
+    if (tk){ tk.focus(); try{ const i = tk.value.indexOf('['); if (i >= 0){ const j = tk.value.indexOf(']', i); if (j >= 0) tk.setSelectionRange(i, j+1); } }catch(_){ } }
+  }
+
   function startFromForm(){
     const name = $('ag-f-name').value.trim() || 'Agent';
     const task = $('ag-f-task').value.trim();
@@ -6541,7 +7308,11 @@ window.kiteMCP = (function(){
       spawn: $('ag-t-spawn').checked,
       browser:  $('ag-t-browser') ? $('ag-t-browser').checked : false,
       code:     $('ag-t-code') ? $('ag-t-code').checked : false,
-      artifact: $('ag-t-artifact') ? $('ag-t-artifact').checked : false
+      artifact: $('ag-t-artifact') ? $('ag-t-artifact').checked : false,
+      ai:       $('ag-t-ai') ? $('ag-t-ai').checked : false,
+      memory:   $('ag-t-memory') ? $('ag-t-memory').checked : false,
+      creative: $('ag-t-creative') ? $('ag-t-creative').checked : false,
+      productivity: $('ag-t-productivity') ? $('ag-t-productivity').checked : false
     };
     // external Connections / MCP tools selected in the grouped checkboxes
     document.querySelectorAll('#ag-ext-tools .ag-ext-cb:checked').forEach(cb => { toolFlags[cb.dataset.tool] = true; });
@@ -6609,6 +7380,7 @@ window.kiteMCP = (function(){
     init(){
       if (AG.booted){ renderList(); return; }
       AG.booted = true;
+      renderPresets();
       $('ag-new-btn').addEventListener('click', openModal);
       $('ag-modal-x').addEventListener('click', closeModal);
       // detail panel tab bar
@@ -6775,6 +7547,7 @@ window.kiteMCP = (function(){
     },
     focusAgent(id){ if (!AG.agents.get(id)) return false; if (typeof switchTab === 'function') switchTab(9); selectAgent(id); return true; },
 
+    applyPreset,
     // exposed for tests / integration
     _AG: AG, _create: createAgent, _run: runAgent, _cancel: cancelAgent
   };
