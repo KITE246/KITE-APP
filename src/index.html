@@ -1191,6 +1191,25 @@ body.light .kv-bubble{background:linear-gradient(135deg,rgba(250,250,252,.92),rg
       <button class="btn btn-dim" onclick="testVoice()" style="font-size:11px;padding:9px 20px">Preload local model</button>
     </div>
   </div>
+  <div class="keys-card" data-prov="discord-rpc">
+    <h3><span class="dot" style="background:#5865F2"></span>Discord Rich Presence<span class="keys-status" id="discord-status"></span></h3>
+    <p>Show what Kite is doing on your Discord profile — running agents, the current tool with an elapsed timer, approvals, completions, and voice. A tiny zero-dependency Node sidecar talks to your local Discord app; if Discord is closed it just retries quietly. Create an application at <a href="https://discord.com/developers/applications" target="_blank" rel="noopener">discord.com/developers/applications</a> → <b>New Application</b>, copy its <b>Application ID</b>, and (optional) upload a Rich Presence art asset named <code>kite</code> for the big logo.</p>
+    <label class="ag-check" style="margin:0 0 12px"><input type="checkbox" id="discord-enabled"> Enable Discord Rich Presence</label>
+    <div class="field" style="margin:0 0 12px"><label class="fl">Application ID</label>
+      <input class="inp" id="discord-appid" placeholder="123456789012345678" autocomplete="off" spellcheck="false"></div>
+    <div id="discord-preview" style="display:flex;align-items:center;gap:12px;background:var(--bg1);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin:0 0 12px">
+      <div style="width:44px;height:44px;border-radius:8px;background:#0e0e11;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:700;color:#5865F2;font-size:11px;flex:none">KITE</div>
+      <div style="min-width:0">
+        <div style="font-family:var(--mono);font-size:9px;letter-spacing:.5px;text-transform:uppercase;color:var(--t3)">Playing a game</div>
+        <div id="discord-prev-details" style="font-size:12px;font-weight:600;color:var(--t1)">Kite</div>
+        <div id="discord-prev-state" style="font-size:11px;color:var(--t2)">Idle</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-teal" onclick="if(window.kiteDiscord)kiteDiscord.saveSettings()" style="font-size:11px;padding:9px 20px">Save</button>
+      <button class="btn btn-dim" onclick="if(window.kiteDiscord)kiteDiscord.test()" style="font-size:11px;padding:9px 20px">Test presence</button>
+    </div>
+  </div>
   <div class="foot" style="margin-top:40px"><div class="foot-brand"><div class="foot-diamond"></div><div class="foot-name">Kite</div></div><div class="foot-note">API KEYS · V4 · 2025</div></div>
 </div><!-- /tab-4 -->
 <!-- ═══════════ TAB 10 · CONNECTIONS ═══════════ -->
@@ -2250,7 +2269,7 @@ function switchTab(i){
   });
   const mainEl=document.querySelector('.main');
   if(mainEl)mainEl.classList.toggle('main-kite',i===7);
-  if(i===4) requestAnimationFrame(()=>{if(typeof loadApiKeysUI==='function')loadApiKeysUI();});
+  if(i===4) requestAnimationFrame(()=>{if(typeof loadApiKeysUI==='function')loadApiKeysUI();if(window.kiteDiscord)window.kiteDiscord.initUI();});
   if(i===7) requestAnimationFrame(()=>{if(typeof chatInit==='function')chatInit();});
   if(i===9)requestAnimationFrame(()=>{if(window.kiteAgents)window.kiteAgents.init();});
   if(i===10)requestAnimationFrame(()=>{if(window.kiteConnections)window.kiteConnections.init();});
@@ -3594,6 +3613,7 @@ const kiteVoice=(function(){
     // recording drives the equalizer from audio; every other state clears the
     // inline heights so the CSS idle/wave animation takes over.
     if(state!=='recording')resetEq();
+    if(window.kiteDiscord)try{window.kiteDiscord.voiceState(state);}catch(_){}
     log('state → '+state+(subOverride?' ('+subOverride+')':''));
   }
   function errorState(msg,ms){
@@ -5296,6 +5316,45 @@ window.kiteMCP = (function(){
     { id:'pdf', name:'PDF', desc:'Read and extract text from PDF files', icon:letterIcon('PDF','#EC1C24'),
       command:'npx', args:['-y','pdf-mcp-server'],
       tools:['read_pdf','extract_text','get_metadata','search_pdf','get_page_count'] },
+
+    /* ── Day 6 additions (verified npm packages) ── */
+    { id:'perplexity', name:'Perplexity Search', desc:'AI-powered search with live citations', icon:letterIcon('Px','#20808D'),
+      command:'npx', args:['-y','server-perplexity-ask'],
+      configFields:[{key:'PERPLEXITY_API_KEY',label:'Perplexity API key',placeholder:'pplx-…',kind:'env',required:true,hint:'Key at <a href="https://www.perplexity.ai/settings/api" target="_blank" rel="noopener">perplexity.ai</a>'}],
+      tools:['perplexity_ask','perplexity_research','perplexity_reason'] },
+    { id:'aws', name:'AWS', desc:'Read your AWS infrastructure (S3, EC2, Lambda, CloudWatch)', icon:letterIcon('aws','#FF9900'),
+      command:'npx', args:['-y','aws-mcp'],
+      configFields:[
+        {key:'AWS_ACCESS_KEY_ID',label:'AWS access key ID',placeholder:'AKIA…',kind:'env',required:true},
+        {key:'AWS_SECRET_ACCESS_KEY',label:'AWS secret access key',placeholder:'••••••••',kind:'env',required:true},
+        {key:'AWS_REGION',label:'Default region · optional',placeholder:'us-east-1',kind:'env',required:false,hint:'Use read-only IAM credentials from the <a href="https://console.aws.amazon.com/iam" target="_blank" rel="noopener">AWS console</a>'}
+      ],
+      tools:['list_s3_buckets','list_ec2_instances','get_cloudwatch_metrics','list_lambda_functions'] },
+    { id:'docker', name:'Docker', desc:'Manage Docker containers — start/stop need approval', icon:letterIcon('Dk','#2496ED'),
+      command:'npx', args:['-y','docker-mcp'],
+      tools:['list_containers','create_container','deploy_compose','get_logs','list_images'] },
+    { id:'obsidian', name:'Obsidian', desc:'Read and write your Obsidian vault', icon:letterIcon('Ob','#7C3AED'),
+      command:'npx', args:['-y','obsidian-mcp'],
+      configFields:[{key:'vault',label:'Vault path',placeholder:'C:\\Users\\praga\\Obsidian\\MyVault',kind:'arg',required:true}],
+      tools:['read_note','create_note','edit_note','search_vault','list_notes'] },
+    { id:'excel', name:'Excel', desc:'Read and write Excel spreadsheets', icon:letterIcon('Xl','#217346'),
+      command:'npx', args:['-y','@negokaz/excel-mcp-server'],
+      env:{ EXCEL_MCP_PAGING_CELLS_LIMIT:'4000' },
+      tools:['excel_describe_sheets','excel_read_sheet','excel_write_to_sheet','excel_create_table','excel_copy_sheet'] },
+    { id:'replicate', name:'Image Generation', desc:'Generate images via Replicate (Flux, SDXL, etc)', icon:letterIcon('Rp','#F55036'),
+      command:'npx', args:['-y','mcp-replicate'],
+      configFields:[{key:'REPLICATE_API_TOKEN',label:'Replicate API token',placeholder:'r8_…',kind:'env',required:true,hint:'Token at <a href="https://replicate.com/account/api-tokens" target="_blank" rel="noopener">replicate.com</a>'}],
+      tools:['create_prediction','get_predictions','search_models','list_models','get_model'] },
+    { id:'maps', name:'Maps', desc:'Location and mapping tools (geocode, directions, places)', icon:letterIcon('Mp','#4285F4'),
+      command:'npx', args:['-y','@modelcontextprotocol/server-google-maps'],
+      configFields:[{key:'GOOGLE_MAPS_API_KEY',label:'Google Maps API key',placeholder:'AIza…',kind:'env',required:true,hint:'Key from the <a href="https://console.cloud.google.com/google/maps-apis" target="_blank" rel="noopener">Google Cloud console</a>'}],
+      tools:['maps_geocode','maps_reverse_geocode','maps_search_places','maps_place_details','maps_directions'] },
+    { id:'weather', name:'Weather', desc:'US weather forecasts and alerts (National Weather Service · no key)', icon:letterIcon('Wx','#FDB813'),
+      command:'npx', args:['-y','@h1deya/mcp-server-weather'],
+      tools:['get_forecast','get_alerts'] },
+    { id:'crypto', name:'Crypto', desc:'Live cryptocurrency prices and market analysis', icon:letterIcon('&#8383;','#F7931A'),
+      command:'npx', args:['-y','mcp-crypto-price'],
+      tools:['get-crypto-price','get-market-analysis','get-historical-analysis'] },
   ];
 
   /* ════════════════════ STORAGE ════════════════════ */
@@ -6568,6 +6627,7 @@ window.kiteMCP = (function(){
       else if (tool === 'shell_exec') detail = (args && args.command) || '';
       else detail = args ? JSON.stringify(args) : '';
       a.status = 'waiting';
+      if (window.kiteDiscord) window.kiteDiscord.agentApproval(a);
       renderList(); if (AG.selected === a.id) renderDetail(a);
       pushAct(a, { t: 'approval', apid, tool, detail, resolved: null });
     });
@@ -6579,6 +6639,7 @@ window.kiteMCP = (function(){
     const item = a.activity.find(x => x.t === 'approval' && x.apid === apid);
     if (item) item.resolved = ok ? 'yes' : 'no';
     if (a.running && a.status === 'waiting') a.status = 'running';
+    if (window.kiteDiscord) window.kiteDiscord.agentRunning(a);
     renderList(); if (AG.selected === a.id) renderStream(a);
     resolve(ok);
   }
@@ -6587,6 +6648,7 @@ window.kiteMCP = (function(){
     a.status = status;
     a.running = false;
     a.endedAt = Date.now();
+    if (window.kiteDiscord) window.kiteDiscord.agentDone(a);
     if (status === 'done') pushAct(a, { t: 'done', text: msg || '(no result)' });
     else if (status === 'error') pushAct(a, { t: 'error', text: (msg || 'failed'), retry: true });
     else if (status === 'cancelled') pushAct(a, { t: 'error', text: 'Cancelled', retry: true });
@@ -6644,6 +6706,7 @@ window.kiteMCP = (function(){
   }
   async function coordinate(a){
     a.status = 'running'; a.running = true; a.startedAt = Date.now(); a.endedAt = 0;
+    if (window.kiteDiscord) window.kiteDiscord.agentStart(a);
     const C = a.coord = a.coord || {};
     renderList(); if (AG.selected === a.id) renderDetail(a); updateBadge();
     pushAct(a, { t: 'goal', text: a.task });
@@ -6735,6 +6798,7 @@ window.kiteMCP = (function(){
     try { registerExternalTools(); } catch(_){ }
     if (a.engine === 'coordinator') return coordinate(a);
     a.status = 'running'; a.running = true; a.startedAt = Date.now(); a.endedAt = 0;
+    if (window.kiteDiscord) window.kiteDiscord.agentStart(a);
     renderList(); if (AG.selected === a.id) renderDetail(a);
     updateBadge();
     pushAct(a, { t: 'goal', text: a.task });
@@ -6808,6 +6872,7 @@ window.kiteMCP = (function(){
         renderList(); continue;
       }
       pushAct(a, { t: 'toolcall', name: act.tool, args: act.args, ask: !!tool.approval });
+      if (window.kiteDiscord) window.kiteDiscord.agentTool(a, act.tool);
 
       if (tool.approval){
         const ok = await requestApproval(a, act.tool, act.args || {});
@@ -7778,6 +7843,143 @@ window.kiteMemory = (function(){
     window.kiteListen('tauri://drag-drop',  e => { const p = e && e.payload; handleDrop(p && (p.paths || p)); }).catch(()=>{});
   })();
 })();
+</script>
+
+<!-- ═══════════ DISCORD RICH PRESENCE (sidecar bridge) ═══════════ -->
+<script>
+/* Self-contained. Publishes window.kiteDiscord. Spawns a zero-dependency Node
+   sidecar (discord-rpc-sidecar.cjs) through the same Tauri MCP process plumbing
+   (mcp_start / mcp_send / mcp_stop) under its own id 'kite-discord', so it never
+   disturbs the MCP tab. Kite pushes JSON presence events to the sidecar's stdin;
+   the sidecar talks the Discord IPC protocol directly. Never touches Chat or the
+   Voice card's appearance. */
+window.kiteDiscord = (function(){
+  const LS='kite_discord';
+  const SRV_ID='kite-discord';
+  const SIDE_PATH='C:\\Users\\praga\\KITE-APP\\discord-rpc-sidecar.cjs';
+  let store=(()=>{try{return JSON.parse(localStorage.getItem(LS)||'{}')}catch{return{}}})();
+  store.enabled=!!store.enabled; store.appId=store.appId||'';
+  const persist=()=>{try{localStorage.setItem(LS,JSON.stringify(store))}catch{}};
+
+  let running=false;                 // sidecar process spawned
+  const active=new Map();            // agent id -> {name, startTs} of live agents
+  let current=null;                  // agent id whose state is shown
+  let doneTimer=null;
+
+  const nativeInvoke=(c,a)=>{ const inv=window.__TAURI_INTERNALS__&&window.__TAURI_INTERNALS__.invoke; return inv?inv(c,a):Promise.reject(new Error('native bridge unavailable')); };
+
+  /* ── settings UI ── */
+  function setStatus(txt,col){ const e=document.getElementById('discord-status'); if(e){ e.textContent=txt; e.style.color=col||''; } }
+  function preview(details,state){
+    const d=document.getElementById('discord-prev-details'), s=document.getElementById('discord-prev-state');
+    if(d)d.textContent=details; if(s)s.textContent=state;
+  }
+  function initUI(){
+    const en=document.getElementById('discord-enabled'), ap=document.getElementById('discord-appid');
+    if(en)en.checked=store.enabled; if(ap)ap.value=store.appId;
+    setStatus(running?'running':(store.enabled?'starting…':'off'), running?'var(--teal)':'');
+  }
+  async function saveSettings(){
+    const en=document.getElementById('discord-enabled'), ap=document.getElementById('discord-appid');
+    store.enabled=!!(en&&en.checked); store.appId=(ap?ap.value:'').trim(); persist();
+    await stop();
+    if(store.enabled){
+      if(!store.appId){ setStatus('needs Application ID','var(--coral)'); if(typeof toast==='function')toast('Enter your Discord Application ID first','var(--coral)'); return; }
+      await start(); if(typeof toast==='function')toast('Discord Rich Presence on','var(--teal)');
+    } else { setStatus('off',''); if(typeof toast==='function')toast('Discord Rich Presence off'); }
+  }
+
+  /* ── sidecar lifecycle ── */
+  async function start(){
+    if(running) return true;
+    if(!store.enabled||!store.appId) return false;
+    try{
+      await nativeInvoke('mcp_start',{req:{id:SRV_ID,command:'node',args:[SIDE_PATH,store.appId],env:{}}});
+      running=true; setStatus('waiting for Discord…','var(--amber)');
+      emit({type:'idle'});
+      return true;
+    }catch(e){ running=false; setStatus('error — is Node installed?','var(--coral)'); return false; }
+  }
+  async function stop(){
+    if(doneTimer){ clearTimeout(doneTimer); doneTimer=null; }
+    try{ await nativeInvoke('mcp_stop',{id:SRV_ID}); }catch(_){}
+    running=false;
+  }
+  function emit(ev){
+    // reflect in the settings preview regardless of process state
+    if(ev.type==='running') preview('Running agent: '+(ev.name||'agent'), (ev.tool||'Working…'));
+    else if(ev.type==='approval') preview('Running agent: '+(ev.name||'agent'), 'Waiting for approval…');
+    else if(ev.type==='done') preview('Agent complete: '+(ev.name||'agent'), 'Completed in '+(ev.duration||'?')+' — Cost: $'+(ev.cost!=null?ev.cost:'0'));
+    else if(ev.type==='voice') preview('Kite Voice','Listening…');
+    else preview('Kite','Idle');
+    if(!running) return;
+    try{ nativeInvoke('mcp_send',{id:SRV_ID,message:JSON.stringify(ev)}); }catch(_){}
+  }
+
+  /* ── helpers ── */
+  function fmtDur(ms){ const s=Math.max(1,Math.round(ms/1000)); if(s<60)return s+'s'; const m=Math.floor(s/60), r=s%60; return m+'m'+(r?' '+r+'s':''); }
+  function showCurrent(){
+    if(current && active.has(current)){ const a=active.get(current); emit({type:a.tool==='__await'?'approval':'running', name:a.name, tool:a.tool==='__await'?'':a.tool, startTs:a.startTs}); }
+    else emit({type:'idle'});
+  }
+
+  /* ── agent lifecycle hooks (called from the agents engine) ── */
+  function agentStart(a){ if(!a)return; if(doneTimer){clearTimeout(doneTimer);doneTimer=null;} active.set(a.id,{name:a.name||'agent',startTs:a.startedAt||Date.now(),tool:''}); current=a.id; showCurrent(); }
+  function agentTool(a,tool){ if(!a||!active.has(a.id))return; active.get(a.id).tool=tool||''; current=a.id; showCurrent(); }
+  function agentApproval(a){ if(!a||!active.has(a.id))return; active.get(a.id).tool='__await'; current=a.id; showCurrent(); }
+  function agentRunning(a){ if(!a||!active.has(a.id))return; if(active.get(a.id).tool==='__await')active.get(a.id).tool=''; current=a.id; showCurrent(); }
+  function agentDone(a){
+    if(!a)return;
+    const info=active.get(a.id); active.delete(a.id);
+    const dur=a.startedAt?fmtDur((a.endedAt||Date.now())-a.startedAt):'?';
+    const cost=(a.cost!=null)?(Math.round(a.cost*10000)/10000):0;
+    if(active.size){ // another agent still running — show it
+      current=active.keys().next().value; showCurrent();
+    } else {
+      current=null;
+      emit({type:'done', name:(info&&info.name)||a.name||'agent', duration:dur, cost:cost});
+      if(doneTimer)clearTimeout(doneTimer);
+      doneTimer=setTimeout(()=>{ doneTimer=null; if(!active.size) emit({type:'idle'}); }, 30000); // done shown 30s, then idle
+    }
+  }
+
+  /* ── voice hook (called from the Voice card's setState; appearance untouched) ── */
+  let voiceOn=false;
+  function voiceState(state){
+    if(state==='recording'){ voiceOn=true; emit({type:'voice'}); }
+    else if(voiceOn){ voiceOn=false; showCurrent(); } // revert to agent state or idle
+  }
+
+  /* ── test button ── */
+  async function test(){
+    const ap=document.getElementById('discord-appid'); const id=(ap?ap.value:store.appId||'').trim();
+    if(!id){ if(typeof toast==='function')toast('Enter your Discord Application ID first','var(--coral)'); return; }
+    store.appId=id; store.enabled=true; persist();
+    const ok=await start();
+    emit({type:'running', name:'Test agent', tool:'web_search', startTs:Date.now()});
+    if(typeof toast==='function')toast(ok?'Sent a test presence to Discord':'Sidecar could not start — check Node',ok?'var(--teal)':'var(--coral)');
+    setTimeout(()=>{ if(!active.size) emit({type:'idle'}); }, 8000);
+  }
+
+  let _subbed=false;
+  async function subscribe(){
+    if(_subbed||!window.kiteListen) return;
+    try{
+      await window.kiteListen('mcp-stdout', e=>{
+        const p=e&&e.payload; if(!p||p.id!==SRV_ID||!p.line) return;
+        let m; try{ m=JSON.parse(p.line); }catch{ return; }
+        if(m && m._kite_discord==='connected') setStatus('connected to Discord','var(--teal)');
+        else if(m && m._kite_discord==='waiting') setStatus('waiting for Discord…','var(--amber)');
+      });
+      _subbed=true;
+    }catch(_){}
+  }
+  function init(){ initUI(); subscribe(); if(store.enabled&&store.appId) start(); }
+
+  return { init, initUI, saveSettings, test, start, stop,
+           agentStart, agentTool, agentApproval, agentRunning, agentDone, voiceState };
+})();
+document.addEventListener('DOMContentLoaded', ()=>{ setTimeout(()=>{ if(window.kiteDiscord) window.kiteDiscord.init(); }, 1200); });
 </script>
 </body>
 </html>

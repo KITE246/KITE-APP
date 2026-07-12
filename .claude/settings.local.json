@@ -83,7 +83,18 @@
       "Bash(awk 'NR>=1200 && NR<=1300 && /id=\"tab-[0-9]/' src/index.html)",
       "Bash(awk 'NR<=1289 && /class=\"tab-panel\"/ {last=NR\": \"$0} END{print last}' src/index.html)",
       "Bash(curl -s -o /dev/null -w \"port 1420: HTTP %{http_code}\\\\n\" http://localhost:1420)",
-      "Bash(curl -s -o /dev/null -w \"vite 1420: HTTP %{http_code}\\\\n\" http://localhost:1420)"
+      "Bash(curl -s -o /dev/null -w \"vite 1420: HTTP %{http_code}\\\\n\" http://localhost:1420)",
+      "Bash(x)",
+      "Bash(node --input-type=module -e ' *)",
+      "Bash(node --check discord-rpc-sidecar.js)",
+      "Bash(node --check scratch_discord.js)",
+      "Bash(rm -f scratch_discord.js)",
+      "Bash(grep -nE \"'<script|\\\\\"<script|\\\\\\\\\\\\\\\\x3cscript\" src/index.html)",
+      "Bash(git mv *)",
+      "Bash(mv discord-rpc-sidecar.js discord-rpc-sidecar.cjs)",
+      "Bash(node --check discord-rpc-sidecar.cjs)",
+      "Bash(node --check scratch_d.js)",
+      "Bash(rm -f scratch_d.js)"
     ]
   }
 }
