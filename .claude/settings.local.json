@@ -100,7 +100,14 @@
       "Bash(awk 'NR>=1717 && NR<=1720' src/index.html)",
       "Bash(awk -F: '$1>7852 && $1<8065')",
       "Bash(awk -F: '$1>8065 && $1<8230')",
-      "Bash(awk -F: '$1>4560 && $1<4760')"
+      "Bash(awk -F: '$1>4560 && $1<4760')",
+      "Bash(grep -qE 'Finished|Running `target|error\\\\[|error:|panicked' 'C:\\\\Users\\\\praga\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-praga-KITE-APP\\\\404e4f73-2c39-4a82-a8f2-aad59fd5dc5b\\\\tasks\\\\b1e0qtvc4.output')",
+      "Bash(curl -s http://127.0.0.1:5000/tts/voices)",
+      "Bash(echo \"=== exit $? ===\")",
+      "Bash(curl -s -o /tmp/k1.wav -w \"http=%{http_code} bytes=%{size_download}\\\\n\" -X POST http://127.0.0.1:5000/tts -H \"Content-Type: application/json\" -d '{\"text\":\"Kite is ready\",\"voice\":\"af_bella\"}')",
+      "Bash(curl -s -o /tmp/k2.wav -w \"http=%{http_code} bytes=%{size_download}\\\\n\" -X POST http://127.0.0.1:5000/tts -H \"Content-Type: application/json\" -d '{\"text\":\"Kite is ready\",\"voice\":\"Bella\"}')",
+      "Bash(curl -s -D - -o /dev/null -X POST http://127.0.0.1:5000/tts -H \"Content-Type: application/json\" -d '{\"text\":\"hi\",\"voice\":\"af_bella\"}')",
+      "Bash(curl -s -D - -o /dev/null -X POST http://127.0.0.1:5000/tts -H \"Content-Type: application/json\" -d '{\"text\":\"hi\",\"voice\":\"Bella\"}')"
     ]
   }
 }

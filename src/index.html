@@ -878,6 +878,7 @@ body.light .kv-card{background:linear-gradient(150deg,rgba(252,252,254,.86) 0%,r
 .kv-card-subtitle{font-family:var(--sans);font-size:10.5px;color:var(--t3);margin-top:3px;display:block;transition:color .25s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .kv-state-recording .kv-card-subtitle{color:var(--coral)}
 .kv-state-transcribing .kv-card-subtitle,.kv-state-thinking .kv-card-subtitle,.kv-state-speaking .kv-card-subtitle{color:var(--teal)}
+.kv-tts-warn{font-family:var(--sans);font-size:9.5px;font-weight:600;letter-spacing:.02em;color:var(--amber);margin-top:2px;white-space:nowrap}
 .kv-state-error .kv-card-subtitle{color:var(--coral)}
 .kv-card-close{background:none;border:none;color:var(--t3);cursor:pointer;font-size:17px;padding:2px 4px;border-radius:6px;transition:color .15s,transform .15s;line-height:1;align-self:flex-start}
 .kv-card-close:hover{color:var(--coral);transform:rotate(90deg)}
@@ -3426,7 +3427,9 @@ const KITE_PROVIDERS=[
   {id:'groq',    ready:()=>!!GROQ_KEY,     ask:groqAsk},
   {id:'cerebras',ready:()=>!!CEREBRAS_KEY, ask:cerebrasAsk},
   {id:'mistral', ready:()=>!!MISTRAL_KEY,  ask:mistralAsk},
-  {id:'gemini',  ready:()=>!!GEMINI_KEY,  ask:(m)=>geminiAsk(m)},
+  /* Gemini is intentionally NOT in the chat Auto chain: its free tier quota
+     is tiny and trips constantly, and we reserve the Gemini key for voice TTS.
+     Users can still pick Gemini explicitly from the chat model dropdown. */
   {id:'hf',      ready:()=>!!HF_KEY,       ask:(m)=>hfAsk(m)},
   {id:'openrouter',ready:()=>!!OPENROUTER_KEY, ask:(m)=>openrouterAsk(m)},
   {id:'nvidia',  ready:()=>!!NVIDIA_KEY,   ask:(m)=>nvidiaAsk(m)},
@@ -3463,12 +3466,14 @@ async function kiteAsk(messages){
   }
   const avail=KITE_PROVIDERS.filter(pv=>pv.ready());
   if(!avail.length)throw new Error('no AI keys — add a Groq, Cerebras, Mistral, Gemini, Hugging Face, OpenRouter, NVIDIA or Cloudflare key in Settings → API Keys to wake Kite up');
-  let last=null;
+  let last=null;const fails=[];
   for(const pv of avail){
     try{return await pv.ask(messages);}
-    catch(e){last=e;/* provider down, limited, or misconfigured — next brain */}
+    catch(e){last=e;fails.push(pv.id+': '+((e&&e.message)||String(e)).slice(0,50));/* provider down, limited, or misconfigured — next brain */}
   }
-  throw last||new Error('all AI providers failed — try again in a minute');
+  /* every brain failed — surface the whole chain, not just the last one, so a
+     late-chain quota error doesn't masquerade as the sole cause */
+  throw new Error('all AI brains failed — '+(fails.join(' · ')||'try again in a minute'));
 }
 
 /* ── API Keys tab: live stats rail on every provider card ─────────────────── */
@@ -3659,6 +3664,7 @@ document.addEventListener('DOMContentLoaded', () => {
     <div class="kv-title-block">
       <span class="kv-card-title">Kite Voice</span>
       <span class="kv-card-subtitle" id="kv-subtitle">Ready</span>
+      <span class="kv-tts-warn" id="kv-tts-warn" style="display:none">Using cloud TTS</span>
     </div>
     <button class="kv-card-close" id="kv-close" title="Close">&times;</button>
   </div>
@@ -4259,6 +4265,82 @@ const kiteVoice=(function(){
     return false;
   }
 
+  /* ── Kokoro local TTS (primary). POST /tts {text,voice} → WAV bytes, played
+     via the same playB64 path as the cloud engines. Runs fully offline through
+     the local Kokoro server (server.py). If it's not running we fall through to
+     Gemini cloud TTS and flag the voice card with a small "Using cloud TTS"
+     note. Voice override: localStorage "kv_kokoroVoice" (default af_heart). ── */
+  const KOKORO_URL='http://127.0.0.1:5000';
+  let _kokoroCooldown=0;
+  function kokoroVoice(){ return localStorage.getItem('kv_kokoroVoice')||'af_heart'; }
+  function showTtsWarn(msg){ try{ const w=document.getElementById('kv-tts-warn'); if(w){w.textContent=msg||'Using cloud TTS';w.style.display='block';} }catch(_){} }
+  function hideTtsWarn(){ try{ const w=document.getElementById('kv-tts-warn'); if(w)w.style.display='none'; }catch(_){} }
+  async function speakKokoro(text){
+    if(!invoke) return false;
+    const voice=kokoroVoice();
+    try{
+      for(const c of ttsSplit(text,900)){
+        const res=await invoke('fetch_bytes',{req:{
+          url:KOKORO_URL+'/tts',
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({text:c,voice:voice})
+        }});
+        if(!res) return false;
+        const nl=res.indexOf('\n'); const ct=nl>=0?res.slice(0,nl):''; const b64=nl>=0?res.slice(nl+1):res;
+        // Server answers 200 even on a bad voice, returning a JSON error instead of
+        // audio — treat any non-audio content-type as a failure so we fall back.
+        if(!/audio/i.test(ct)){ log('kokoro TTS non-audio: '+b64Utf8(b64).slice(0,200)); return false; }
+        await playB64(b64,'audio/wav');    // Kokoro returns a WAV file
+        if(_ttsAudio===null) break;         // interrupted by stopSpeaking()
+      }
+      _ttsAudio=null; return true;
+    }catch(e){ log('kokoro TTS failed: '+(e&&e.message||e)); return false; }
+  }
+  // GET /tts/voices → {voices:[{id,name,accent,gender}, …]} (or a plain id array).
+  // Returns normalized {id,name,accent,gender}. The /tts endpoint needs the `id`
+  // (e.g. "af_bella"), NOT the display name ("Bella") — mixing them up 404s.
+  async function listKokoroVoices(){
+    if(!invoke) return [];
+    try{
+      const res=await invoke('fetch_bytes',{req:{url:KOKORO_URL+'/tts/voices',method:'GET'}});
+      if(!res) return [];
+      const nl=res.indexOf('\n'); const b64=nl>=0?res.slice(nl+1):res;
+      let d; try{ d=JSON.parse(b64Utf8(b64)); }catch(_){ return []; }
+      const arr=Array.isArray(d)?d:(d&&(d.voices||d.data)||[]);
+      return arr.map(function(v){
+        if(typeof v==='string') return {id:v,name:v,accent:'',gender:''};
+        const id=v&&(v.id||v.voice||v.name);
+        return id?{id:id,name:(v.name||id),accent:(v.accent||''),gender:(v.gender||'')}:null;
+      }).filter(Boolean);
+    }catch(e){ log('kokoro voices failed: '+(e&&e.message||e)); return []; }
+  }
+  // Probe used by the Settings "Test voice" button — plays a line, reports why not.
+  async function testKokoro(){
+    const voice=kokoroVoice();
+    if(!invoke) return {ok:false,error:'No native bridge — run the Kite desktop app.',voice:voice};
+    try{
+      const res=await invoke('fetch_bytes',{req:{
+        url:KOKORO_URL+'/tts',method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({text:'Kite is ready',voice:voice})
+      }});
+      if(!res) return {ok:false,error:'Empty response from Kokoro server.',voice:voice};
+      const nl=res.indexOf('\n'); const ct=nl>=0?res.slice(0,nl):''; const b64=nl>=0?res.slice(nl+1):res;
+      if(!/audio/i.test(ct)){
+        let msg=''; try{ const j=JSON.parse(b64Utf8(b64)); msg=(j&&j.error)||''; }catch(_){ msg=b64Utf8(b64).slice(0,160); }
+        return {ok:false,voice:voice,error:'Server rejected voice "'+voice+'": '+String(msg).slice(0,160)};
+      }
+      stopSpeaking();
+      await playB64(b64,'audio/wav');
+      return {ok:true,voice:voice};
+    }catch(e){
+      const m=String(e&&e.message||e);
+      const down=/network error|connection|refused|ECONNREFUSED|timed out|failed to connect|dns/i.test(m);
+      return {ok:false,down:down,voice:voice,
+        error:down?('Kokoro server not running at '+KOKORO_URL+' — start server.py.'):m.slice(0,180)};
+    }
+  }
+
   let _cfCooldown=0;
   async function speakCloudflareTTS(text){
     const key=(typeof CLOUDFLARE_KEY!=='undefined'&&CLOUDFLARE_KEY)?CLOUDFLARE_KEY:'';
@@ -4327,23 +4409,38 @@ const kiteVoice=(function(){
   let _lastSpoken='';
   let _cloudCooldown=0;
   // Clear all cooldowns so a newly-added key / new user action retries every engine.
-  function resetTTS(){ _geminiCooldown=0; _cfCooldown=0; _cloudCooldown=0; }
+  function resetTTS(){ _geminiCooldown=0; _cfCooldown=0; _cloudCooldown=0; _kokoroCooldown=0; hideTtsWarn(); }
   async function speak(text){
     if(!text)return;
-    const eng=(localStorage.getItem('kv_ttsEngine')||'auto');
+    const eng=(localStorage.getItem('kv_ttsEngine')||'kokoro');
     if(eng==='off')return;               // Settings → Voice → TTS Off
     _lastSpoken=text;
     stopSpeaking();
-    if(eng==='browser'){ await speakLocal(text); return; }
-    // Quality order: 1) Gemini TTS (expressive, human) 2) Cloudflare MeloTTS
-    // 3) Google translate TTS 4) local Windows SAPI. A failed engine is put on a
-    // short COOLDOWN (not disabled forever) so a transient Gemini rate-limit does
-    // not downgrade the whole session to a robotic voice.
-    const now=Date.now();
-    if(now>=_geminiCooldown){ if(await speakGemini(text)) return; _geminiCooldown=now+(speakGemini._limited?20000:60000); }
-    if(now>=_cfCooldown){ if(await speakCloudflareTTS(text)) return; _cfCooldown=now+120000; }
-    if(now>=_cloudCooldown){ if(await speakCloud(text)) return; _cloudCooldown=now+120000; }
-    await speakLocal(text);
+    hideTtsWarn();
+    // Pulse the fox-logo rings teal for the whole generate+play window. Guarded so
+    // we don't clobber a full speaking state a caller already set (wasSpeaking).
+    const wasSpeaking=card.classList.contains('kv-state-speaking');
+    if(!wasSpeaking)card.classList.add('kv-state-speaking');
+    try{
+      if(eng==='browser'){ await speakLocal(text); return; }
+      // Priority chain: 1) Kokoro local (offline, primary) 2) Gemini cloud
+      // 3) Cloudflare MeloTTS 4) Google translate TTS 5) local Windows SAPI. A
+      // failed engine is put on a short COOLDOWN (not disabled forever) so a
+      // transient outage doesn't downgrade the whole session to a robotic voice.
+      const now=Date.now();
+      // Skip Kokoro only when the user explicitly forced Gemini Cloud (eng==='auto').
+      if(eng!=='auto'&&now>=_kokoroCooldown){
+        if(await speakKokoro(text)) return;
+        _kokoroCooldown=now+30000;          // server likely down — brief cooldown
+        showTtsWarn('Using cloud TTS');      // fell back to a cloud engine
+      }
+      if(now>=_geminiCooldown){ if(await speakGemini(text)) return; _geminiCooldown=now+(speakGemini._limited?20000:60000); }
+      if(now>=_cfCooldown){ if(await speakCloudflareTTS(text)) return; _cfCooldown=now+120000; }
+      if(now>=_cloudCooldown){ if(await speakCloud(text)) return; _cloudCooldown=now+120000; }
+      await speakLocal(text);
+    } finally {
+      if(!wasSpeaking)card.classList.remove('kv-state-speaking');
+    }
   }
 
   /* ── Voice intelligence: command detection + AI ── */
@@ -4768,6 +4865,8 @@ const kiteVoice=(function(){
     speak:function(t){return speak(t);},          // let the wake module speak confirmations
     resetTTS:resetTTS,                             // re-arm TTS engines after a key change
     testGemini:testGemini,                         // diagnostic probe for the Voice-Keys card
+    testKokoro:testKokoro,                         // diagnostic probe for the Kokoro local server
+    listKokoroVoices:listKokoroVoices,             // GET /tts/voices for the Settings picker
     handleText:function(t){return handleUtterance(t);}, // process an already-transcribed command
     // Wake one-shot: show the card, run the spoken command, then minimize.
     wakeHandleText:async function(t){
@@ -8730,8 +8829,9 @@ document.addEventListener('DOMContentLoaded', ()=>{ setTimeout(()=>{ if(window.k
       +row('Wake sensitivity','',pills([['low','Low'],['medium','Medium'],['high','High']],LS('kv_wakeSensitivity','medium'),'kiteSettings.pillLS(this,\'kv_wakeSensitivity\',%V)'))
       +row('Hotkey','Global push-to-talk.','<span class="set-rt" style="color:var(--teal);font-family:var(--mono)">F9</span> <button class="set-btn" onclick="toast(\'Press a key… (coming soon)\',\'var(--teal)\')">Change</button>')
       +'<div class="set-grp-h">Text to speech</div>'
-      +row('TTS engine','Gemini is the most natural (needs a Voice Key in Models). Browser uses your OS neural voices.',pills([['auto','Gemini (natural)'],['browser','Browser'],['off','Off']],LS('kv_ttsEngine','auto'),'kiteSettings.pillLS(this,\'kv_ttsEngine\',%V)'))
-      +row('Gemini voice','',pills([['Kore','Kore'],['Charon','Charon'],['Fenrir','Fenrir'],['Aoede','Aoede'],['Puck','Puck']],LS('kv_ttsVoice','Kore'),'kiteSettings.pillLS(this,\'kv_ttsVoice\',%V)'))
+      +row('TTS engine','Kokoro runs locally &amp; offline (needs server.py at 127.0.0.1:5000). Gemini is cloud. Browser uses your OS voices.',pills([['kokoro','Kokoro Local'],['auto','Gemini Cloud'],['browser','Browser'],['off','Off']],LS('kv_ttsEngine','kokoro'),'kiteSettings.pillLS(this,\'kv_ttsEngine\',%V)'))
+      +row('Kokoro voice','Local neural voice. Start server.py to load the full list.','<select class="set-inp" id="set-kokoro-voice" onchange="kiteSettings.saveLS(\'kv_kokoroVoice\',this.value)"><option>Loading…</option></select>',true)
+      +row('Gemini voice','Used when engine is Gemini Cloud (or Kokoro falls back).',pills([['Kore','Kore'],['Charon','Charon'],['Fenrir','Fenrir'],['Aoede','Aoede'],['Puck','Puck']],LS('kv_ttsVoice','Kore'),'kiteSettings.pillLS(this,\'kv_ttsVoice\',%V)'))
       +row('Browser voice','Used when engine is Browser or Gemini is unavailable.','<select class="set-inp" onchange="kiteSettings.saveLS(\'kv_ttsBrowserVoice\',this.value)">'+brOpts+'</select>',true)
       +row('TTS speed','','<input class="set-range" type="range" min="0.5" max="2" step="0.05" value="'+rate+'" oninput="kiteSettings.rate(this)"> <span class="set-rt" id="set-rate-val" style="font-family:var(--mono);color:var(--teal);width:38px;display:inline-block">'+rate.toFixed(2)+'×</span>')
       +row('Auto-announce completions','Speak a summary when an agent finishes.',sw(LS('kv_autoAnnounce','1')==='1','kiteSettings.tog(this,\'kv_autoAnnounce\')'))
@@ -8804,8 +8904,9 @@ document.addEventListener('DOMContentLoaded', ()=>{ setTimeout(()=>{ if(window.k
     }
     if(sec==='voice'&&window.speechSynthesis&&!speechSynthesis.getVoices().length){
       // voices load async on some systems — re-render once ready
-      speechSynthesis.onvoiceschanged=()=>{if($('set-overlay').classList.contains('open')&&document.querySelector('.set-nav.active').dataset.sec==='voice')$('set-body').innerHTML=SECTIONS.voice();speechSynthesis.onvoiceschanged=null;};
+      speechSynthesis.onvoiceschanged=()=>{if($('set-overlay').classList.contains('open')&&document.querySelector('.set-nav.active').dataset.sec==='voice'){$('set-body').innerHTML=SECTIONS.voice();window.kiteSettings.loadKokoroVoices();}speechSynthesis.onvoiceschanged=null;};
     }
+    if(sec==='voice')window.kiteSettings.loadKokoroVoices();  // fetch Kokoro voices from the local server
   }
   function open(sec){$('set-overlay').classList.add('open');show(sec||'general');}
   function close(){$('set-overlay').classList.remove('open');}
@@ -8823,11 +8924,55 @@ document.addEventListener('DOMContentLoaded', ()=>{ setTimeout(()=>{ if(window.k
     saveAD(field,val){const p={};p[field]=val;setAD(p);},
     adRange(el,field,valId){const v=parseInt(el.value);const p={};p[field]=v;setAD(p);const s=$(valId);if(s)s.textContent=v;},
     rate(el){const v=parseFloat(el.value);setLS('kv_ttsRate',String(v));const s=$('set-rate-val');if(s)s.textContent=v.toFixed(2)+'×';},
+    // Populate the Kokoro voice picker from the local server, grouped by accent/gender.
+    async loadKokoroVoices(){
+      const sel=$('set-kokoro-voice'); if(!sel)return;
+      let cur=LS('kv_kokoroVoice','af_heart');
+      let list=[];
+      try{ if(window.kiteVoice&&kiteVoice.listKokoroVoices)list=await kiteVoice.listKokoroVoices(); }catch(_){}
+      if(!list||!list.length){
+        // server down / empty — keep the default selectable so the picker still works
+        sel.innerHTML='<option value="af_heart"'+(cur==='af_heart'?' selected':'')+'>Heart — af_heart (start server.py for the full list)</option>';
+        return;
+      }
+      // Self-heal a stale/invalid stored id (e.g. an old display-name value) so /tts
+      // doesn't 404 on the next spoken line.
+      if(!list.some(function(v){return v.id===cur;})){ cur=list[0].id; setLS('kv_kokoroVoice',cur); }
+      // Prefer the server's accent+gender metadata; fall back to the id prefix.
+      const PREFIX={af:['american','female'],am:['american','male'],bf:['british','female'],bm:['british','male']};
+      const LABELS=[['american','female','American Female'],['american','male','American Male'],['british','female','British Female'],['british','male','British Male']];
+      function meta(v){
+        let a=(v.accent||'').toLowerCase(), g=(v.gender||'').toLowerCase();
+        if((!a||!g)&&v.id){ const p=PREFIX[v.id.slice(0,2)]; if(p){a=a||p[0];g=g||p[1];} }
+        return [a,g];
+      }
+      function opt(v){ const lbl=(v.name&&v.name!==v.id)?(v.name+' — '+v.id):v.id; return '<option value="'+esc(v.id)+'"'+(v.id===cur?' selected':'')+'>'+esc(lbl)+'</option>'; }
+      const used=new Set(); let html='';
+      LABELS.forEach(function(L){
+        const items=list.filter(function(v){const m=meta(v);return m[0]===L[0]&&m[1]===L[1];});
+        if(!items.length)return;
+        html+='<optgroup label="'+L[2]+'">';
+        items.forEach(function(v){used.add(v.id);html+=opt(v);});
+        html+='</optgroup>';
+      });
+      const other=list.filter(function(v){return !used.has(v.id);});
+      if(other.length){ html+='<optgroup label="Other">'; other.forEach(function(v){html+=opt(v);}); html+='</optgroup>'; }
+      sel.innerHTML=html;
+    },
     async testVoice(){
-      const eng=(localStorage.getItem('kv_ttsEngine')||'auto');
+      const eng=(localStorage.getItem('kv_ttsEngine')||'kokoro');
       try{if(window.kiteVoice&&kiteVoice.resetTTS)kiteVoice.resetTTS();}catch(_){}
-      if(eng==='browser'){toast('TTS engine is set to Browser — switch to "Gemini (natural)" above to use Gemini voices.','var(--coral)');}
-      // On Gemini/auto, probe Gemini first so the user learns WHY it may fall back.
+      if(eng==='off'){toast('TTS is set to Off — pick an engine above.','var(--coral)');return;}
+      if(eng==='browser'){toast('TTS engine is set to Browser — using your OS voice.','var(--teal)');}
+      // Kokoro first (local, offline) when it's the selected engine.
+      if(eng==='kokoro'&&window.kiteVoice&&kiteVoice.testKokoro){
+        toast('Testing Kokoro (local)…','var(--teal)');
+        let r; try{ r=await kiteVoice.testKokoro(); }catch(e){ r={ok:false,error:String(e&&e.message||e)}; }
+        if(r.ok){ toast('Kokoro working — '+r.voice,'var(--teal)'); return; }
+        toast('Kokoro unavailable: '+r.error+' — trying cloud…','var(--coral)');
+        // fall through to Gemini (the real fallback) so it still speaks
+      }
+      // Gemini cloud probe (forced Gemini engine, or Kokoro's fallback).
       if(eng!=='browser'&&eng!=='off'&&window.kiteVoice&&kiteVoice.testGemini){
         toast('Testing Gemini voice…','var(--teal)');
         let r; try{ r=await kiteVoice.testGemini(); }catch(e){ r={ok:false,error:String(e&&e.message||e)}; }
