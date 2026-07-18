@@ -21,6 +21,11 @@ lettre = { version = "0.11", default-features = false, features = ["smtp-transpo
 zip = { version = "2", default-features = false, features = ["deflate"] }
 calamine = "0.26"
 walkdir = "2"
+tiny_http = "0.12"
+tokio-tungstenite = { version = "0.24", features = ["native-tls"] }
+futures-util = "0.3"
+sha2 = "0.10"
+httpdate = "1"
 
 [profile.release]
 strip = true

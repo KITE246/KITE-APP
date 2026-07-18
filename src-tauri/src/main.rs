@@ -183,6 +183,41 @@ async fn fetch_bytes(req: FetchBytesReq) -> Result<String, String> {
     ))
 }
 
+// Read a local file and return it as "mime\nbase64" (same shape as fetch_bytes).
+// Used by the agent's transcribe_audio tool to load an audio file for the local
+// Whisper server. Read-only; size-capped to 50 MB.
+#[tauri::command]
+fn read_file_b64(path: String) -> Result<String, String> {
+    let p = std::path::Path::new(&path);
+    let meta = std::fs::metadata(p).map_err(|e| format!("cannot read {}: {}", path, e))?;
+    if !meta.is_file() {
+        return Err(format!("not a file: {}", path));
+    }
+    if meta.len() > 50_000_000 {
+        return Err("file too large (50 MB max)".into());
+    }
+    let ext = p
+        .extension()
+        .map(|s| s.to_string_lossy().to_lowercase())
+        .unwrap_or_default();
+    let mime = match ext.as_str() {
+        "wav" => "audio/wav",
+        "mp3" => "audio/mpeg",
+        "m4a" | "mp4" => "audio/mp4",
+        "ogg" | "oga" => "audio/ogg",
+        "webm" => "audio/webm",
+        "flac" => "audio/flac",
+        "aac" => "audio/aac",
+        _ => "application/octet-stream",
+    };
+    let bytes = std::fs::read(p).map_err(|e| e.to_string())?;
+    Ok(format!(
+        "{}\n{}",
+        mime,
+        base64::engine::general_purpose::STANDARD.encode(&bytes)
+    ))
+}
+
 #[tauri::command]
 fn open_mic_settings() -> Result<(), String> {
     Command::new("cmd")
@@ -360,6 +395,14 @@ fn agent_shell_exec(app: tauri::AppHandle, req: ShellExecReq) -> Result<String, 
         c.current_dir(&req.cwd);
     }
     c.stdout(Stdio::piped()).stderr(Stdio::piped());
+    // CREATE_NO_WINDOW: run without allocating a console. Spawning a console app
+    // (powershell/cmd) from the windowless GUI process otherwise flashes a window
+    // and, under desktop-heap pressure, crashes the child with 0xC0000142.
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        c.creation_flags(0x0800_0000);
+    }
 
     let spawned = c.spawn();
     let mut child = match spawned {
@@ -537,6 +580,13 @@ fn agent_run_code(app: tauri::AppHandle, req: RunCodeReq) -> Result<String, Stri
         }
     }
     c.stdout(Stdio::piped()).stderr(Stdio::piped());
+    // CREATE_NO_WINDOW — see agent_shell_exec: avoids the console-window flash and
+    // the 0xC0000142 (STATUS_DLL_INIT_FAILED) crash when spawned from the GUI app.
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        c.creation_flags(0x0800_0000);
+    }
 
     let mut child = match c.spawn() {
         Ok(child) => child,
@@ -1406,6 +1456,410 @@ fn agent_parse_excel(req: ParseExcelReq) -> Result<String, String> {
     Ok(out)
 }
 
+/* ═══════════════════════════════════════════════════════════════════════
+   LOCAL MCP SERVER — exposes Kite's native tools (system/shell/file) to
+   external MCP clients (Claude Code, Codex, OpenCode) over a localhost
+   Streamable-HTTP endpoint, authenticated with the user's generated key.
+   Same-machine only; the key authorizes every request.
+   ═══════════════════════════════════════════════════════════════════════ */
+use std::sync::atomic::AtomicBool;
+
+struct KiteMcpServer {
+    running: std::sync::Arc<AtomicBool>,
+    port: u16,
+    thread: Option<std::thread::JoinHandle<()>>,
+}
+static KITE_MCP_SERVER: Mutex<Option<KiteMcpServer>> = Mutex::new(None);
+
+#[derive(serde::Deserialize)]
+struct McpServerStartReq {
+    port: u16,
+    key: String,
+}
+
+// Run a PowerShell script (temp .ps1, CREATE_NO_WINDOW) and return its output.
+fn mcp_run_ps(script: &str) -> Result<String, String> {
+    let n = SCRIPT_SEQ.fetch_add(1, Ordering::Relaxed);
+    let mut path = std::env::temp_dir();
+    path.push(format!("kite_mcp_{}_{}.ps1", std::process::id(), n));
+    let mut bytes = vec![0xEF, 0xBB, 0xBF];
+    bytes.extend_from_slice(script.as_bytes());
+    std::fs::write(&path, &bytes).map_err(|e| e.to_string())?;
+    let mut c = Command::new("powershell");
+    c.args([
+        "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File",
+        &path.to_string_lossy(),
+    ]);
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        c.creation_flags(0x0800_0000);
+    }
+    let out = c.output();
+    let _ = std::fs::remove_file(&path);
+    let out = out.map_err(|e| e.to_string())?;
+    let mut s = String::from_utf8_lossy(&out.stdout).to_string();
+    let err = String::from_utf8_lossy(&out.stderr);
+    if !err.trim().is_empty() {
+        s.push_str("\n[stderr] ");
+        s.push_str(err.trim());
+    }
+    Ok(s.trim().to_string())
+}
+
+fn mcp_tool_specs() -> serde_json::Value {
+    serde_json::json!([
+        { "name": "system_info", "description": "Current CPU %, RAM, disk and uptime of this Windows PC.",
+          "inputSchema": { "type": "object", "properties": {} } },
+        { "name": "run_powershell", "description": "Run a PowerShell script on this PC and return stdout/stderr.",
+          "inputSchema": { "type": "object", "properties": { "script": { "type": "string" } }, "required": ["script"] } },
+        { "name": "read_file", "description": "Read a text file from this PC (first 20000 chars).",
+          "inputSchema": { "type": "object", "properties": { "path": { "type": "string" } }, "required": ["path"] } },
+        { "name": "write_file", "description": "Write text to a file on this PC (overwrites).",
+          "inputSchema": { "type": "object", "properties": { "path": { "type": "string" }, "content": { "type": "string" } }, "required": ["path", "content"] } },
+        { "name": "list_dir", "description": "List the entries of a directory on this PC.",
+          "inputSchema": { "type": "object", "properties": { "path": { "type": "string" } }, "required": ["path"] } }
+    ])
+}
+
+fn mcp_dispatch(name: &str, args: &serde_json::Value) -> Result<String, String> {
+    let sv = |k: &str| args.get(k).and_then(|x| x.as_str()).unwrap_or("").to_string();
+    match name {
+        "system_info" => mcp_run_ps(
+            "$os=Get-CimInstance Win32_OperatingSystem;$cpu=(Get-CimInstance Win32_Processor|Measure-Object -Property LoadPercentage -Average).Average;$d=Get-CimInstance Win32_LogicalDisk -Filter \"DeviceID='$($env:SystemDrive)'\";$up=(Get-Date)-$os.LastBootUpTime;[ordered]@{cpu_pct=[math]::Round($cpu,0);ram_used_gb=[math]::Round(($os.TotalVisibleMemorySize-$os.FreePhysicalMemory)/1MB,1);ram_total_gb=[math]::Round($os.TotalVisibleMemorySize/1MB,1);disk_free_gb=[math]::Round($d.FreeSpace/1GB,1);disk_total_gb=[math]::Round($d.Size/1GB,1);uptime_hours=[math]::Round($up.TotalHours,1);os=$os.Caption}|ConvertTo-Json",
+        ),
+        "run_powershell" => {
+            let sc = sv("script");
+            if sc.trim().is_empty() {
+                return Err("script required".into());
+            }
+            mcp_run_ps(&sc)
+        }
+        "read_file" => {
+            let p = sv("path");
+            if p.is_empty() {
+                return Err("path required".into());
+            }
+            std::fs::read_to_string(&p)
+                .map(|c| c.chars().take(20000).collect::<String>())
+                .map_err(|e| e.to_string())
+        }
+        "write_file" => {
+            let p = sv("path");
+            let c = sv("content");
+            if p.is_empty() {
+                return Err("path required".into());
+            }
+            std::fs::write(&p, c.as_bytes())
+                .map(|_| format!("Wrote {} bytes to {}", c.len(), p))
+                .map_err(|e| e.to_string())
+        }
+        "list_dir" => {
+            let p = sv("path");
+            if p.is_empty() {
+                return Err("path required".into());
+            }
+            let mut out = String::new();
+            for e in std::fs::read_dir(&p).map_err(|e| e.to_string())? {
+                if let Ok(e) = e {
+                    let is_dir = e.file_type().map(|t| t.is_dir()).unwrap_or(false);
+                    out.push_str(if is_dir { "[dir] " } else { "      " });
+                    out.push_str(&e.file_name().to_string_lossy());
+                    out.push('\n');
+                }
+            }
+            Ok(out)
+        }
+        other => Err(format!("unknown tool '{}'", other)),
+    }
+}
+
+fn mcp_handle_request(mut request: tiny_http::Request, key: &str) {
+    use tiny_http::{Header, Response};
+    // Non-POST (e.g. a GET SSE probe) → 405.
+    if *request.method() != tiny_http::Method::Post {
+        let _ = request.respond(Response::from_string("").with_status_code(405));
+        return;
+    }
+    let authed = request.headers().iter().any(|h| {
+        h.field.equiv("Authorization") && h.value.as_str().trim() == format!("Bearer {}", key)
+    });
+    if !authed {
+        let _ = request.respond(
+            Response::from_string("{\"error\":\"unauthorized\"}").with_status_code(401),
+        );
+        return;
+    }
+    let mut body = String::new();
+    let _ = request.as_reader().read_to_string(&mut body);
+    let v: serde_json::Value = serde_json::from_str(&body).unwrap_or(serde_json::Value::Null);
+    let method = v.get("method").and_then(|m| m.as_str()).unwrap_or("");
+    // Notifications carry no id and expect no JSON-RPC response.
+    if method.starts_with("notifications/") || method == "initialized" {
+        let _ = request.respond(Response::from_string("").with_status_code(202));
+        return;
+    }
+    let id = v.get("id").cloned().unwrap_or(serde_json::Value::Null);
+    let result = match method {
+        "initialize" => serde_json::json!({
+            "protocolVersion": "2024-11-05",
+            "capabilities": { "tools": {} },
+            "serverInfo": { "name": "kite", "version": "1.0.0" }
+        }),
+        "ping" => serde_json::json!({}),
+        "tools/list" => serde_json::json!({ "tools": mcp_tool_specs() }),
+        "tools/call" => {
+            let params = v.get("params").cloned().unwrap_or(serde_json::Value::Null);
+            let name = params.get("name").and_then(|n| n.as_str()).unwrap_or("");
+            let args = params.get("arguments").cloned().unwrap_or(serde_json::json!({}));
+            match mcp_dispatch(name, &args) {
+                Ok(text) => serde_json::json!({ "content": [ { "type": "text", "text": text } ] }),
+                Err(e) => serde_json::json!({ "content": [ { "type": "text", "text": format!("Error: {}", e) } ], "isError": true }),
+            }
+        }
+        _ => {
+            let resp = serde_json::json!({ "jsonrpc": "2.0", "id": id, "error": { "code": -32601, "message": format!("method not found: {}", method) } });
+            let hdr = Header::from_bytes(&b"Content-Type"[..], &b"application/json"[..]).unwrap();
+            let _ = request.respond(Response::from_string(resp.to_string()).with_header(hdr));
+            return;
+        }
+    };
+    let resp = serde_json::json!({ "jsonrpc": "2.0", "id": id, "result": result });
+    let hdr = Header::from_bytes(&b"Content-Type"[..], &b"application/json"[..]).unwrap();
+    let _ = request.respond(Response::from_string(resp.to_string()).with_header(hdr));
+}
+
+#[tauri::command]
+fn mcp_server_start(req: McpServerStartReq) -> Result<(), String> {
+    let mut guard = KITE_MCP_SERVER.lock().map_err(|e| e.to_string())?;
+    if guard.is_some() {
+        return Ok(());
+    }
+    let server = tiny_http::Server::http(("127.0.0.1", req.port))
+        .map_err(|e| format!("could not bind 127.0.0.1:{} — {}", req.port, e))?;
+    let running = std::sync::Arc::new(AtomicBool::new(true));
+    let running2 = running.clone();
+    let key = req.key.clone();
+    let thread = std::thread::spawn(move || {
+        while running2.load(Ordering::Relaxed) {
+            match server.recv_timeout(std::time::Duration::from_millis(400)) {
+                Ok(Some(request)) => mcp_handle_request(request, &key),
+                Ok(None) => {}
+                Err(_) => break,
+            }
+        }
+    });
+    *guard = Some(KiteMcpServer { running, port: req.port, thread: Some(thread) });
+    Ok(())
+}
+
+#[tauri::command]
+fn mcp_server_stop() -> Result<(), String> {
+    let mut guard = KITE_MCP_SERVER.lock().map_err(|e| e.to_string())?;
+    if let Some(mut h) = guard.take() {
+        h.running.store(false, Ordering::Relaxed);
+        if let Some(t) = h.thread.take() {
+            let _ = t.join();
+        }
+    }
+    Ok(())
+}
+
+#[tauri::command]
+fn mcp_server_status() -> serde_json::Value {
+    let running_port = KITE_MCP_SERVER
+        .lock()
+        .ok()
+        .and_then(|g| g.as_ref().map(|h| (h.running.load(Ordering::Relaxed), h.port)));
+    match running_port {
+        Some((running, port)) => serde_json::json!({ "running": running, "port": port }),
+        None => serde_json::json!({ "running": false, "port": 0 }),
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   EDGE NEURAL TTS — free Microsoft "read aloud" voices over the Edge speech
+   WebSocket. Runs in Rust (not the webview) because the endpoint rejects any
+   browser Origin header. Returns base64 MP3.
+   ═══════════════════════════════════════════════════════════════════════ */
+#[derive(serde::Deserialize)]
+struct EdgeTtsReq {
+    text: String,
+    voice: Option<String>,
+    rate: Option<String>,
+    pitch: Option<String>,
+}
+
+fn edge_uuid() -> String {
+    let n = SCRIPT_SEQ.fetch_add(1, Ordering::Relaxed);
+    let t = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_nanos())
+        .unwrap_or(0);
+    format!("{:016x}{:08x}{:08x}", t as u64, n, (t >> 64) as u32)
+}
+
+// Clock-skew (seconds) between this machine and Microsoft's servers. The
+// Sec-MS-GEC token is time-based, so a wrong local clock → 403. On a 403 we read
+// the server Date header and cache the delta here so later calls succeed.
+static EDGE_CLOCK_SKEW: std::sync::atomic::AtomicI64 = std::sync::atomic::AtomicI64::new(0);
+
+// Sec-MS-GEC = SHA-256(filetime_ticks_rounded_to_5min + trusted_token), uppercase hex.
+// `skew` seconds are added to the local clock to match Microsoft's server time.
+fn edge_sec_token(skew: i64) -> String {
+    use sha2::{Digest, Sha256};
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs() as i64)
+        .unwrap_or(0)
+        + skew;
+    let mut ticks: i128 = now as i128 + 11_644_473_600i128;
+    ticks -= ticks % 300;
+    ticks *= 10_000_000i128;
+    let mut h = Sha256::new();
+    h.update(format!("{}{}", ticks, "6A5AA1D4EAFF4E9FB37E23D68491D6F4").as_bytes());
+    h.finalize().iter().map(|b| format!("{:02X}", b)).collect()
+}
+
+// Build the read-aloud WS handshake request for a given clock skew.
+fn edge_build_request(
+    skew: i64,
+) -> Result<tokio_tungstenite::tungstenite::handshake::client::Request, String> {
+    use tokio_tungstenite::tungstenite::client::IntoClientRequest;
+    let url = format!(
+        "wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1?TrustedClientToken=6A5AA1D4EAFF4E9FB37E23D68491D6F4&Sec-MS-GEC={}&Sec-MS-GEC-Version=1-143.0.3650.75&ConnectionId={}",
+        edge_sec_token(skew),
+        edge_uuid()
+    );
+    let mut request = url
+        .into_client_request()
+        .map_err(|e| format!("edge tts request: {}", e))?;
+    let h = request.headers_mut();
+    h.insert(
+        "Origin",
+        "chrome-extension://jdiccldimpdaibmpdkjnbmckianbfold".parse().unwrap(),
+    );
+    h.insert(
+        "User-Agent",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0"
+            .parse()
+            .unwrap(),
+    );
+    h.insert("Pragma", "no-cache".parse().unwrap());
+    h.insert("Cache-Control", "no-cache".parse().unwrap());
+    h.insert("Accept-Encoding", "gzip, deflate, br, zstd".parse().unwrap());
+    h.insert("Accept-Language", "en-US,en;q=0.9".parse().unwrap());
+    Ok(request)
+}
+
+fn edge_xml_escape(s: &str) -> String {
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&apos;")
+}
+
+#[tauri::command]
+async fn edge_tts(req: EdgeTtsReq) -> Result<String, String> {
+    use futures_util::{SinkExt, StreamExt};
+    use tokio_tungstenite::tungstenite::{Error as WsError, Message};
+    // The endpoint 403s unless the handshake carries the whitelisted Edge read-aloud
+    // Origin + Edge User-Agent AND a Sec-MS-GEC token whose time matches the server.
+    // Try with our cached skew; on a 403 read the server Date header, resync, retry.
+    let skew = EDGE_CLOCK_SKEW.load(std::sync::atomic::Ordering::Relaxed);
+    let hs_req = edge_build_request(skew)?;
+    let mut ws = match tokio_tungstenite::connect_async(hs_req).await {
+        Ok((ws, _)) => ws,
+        Err(WsError::Http(resp)) if resp.status().as_u16() == 403 => {
+            let new_skew = resp
+                .headers()
+                .get("date")
+                .and_then(|v| v.to_str().ok())
+                .and_then(|d| httpdate::parse_http_date(d).ok())
+                .map(|st| {
+                    let server = st
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .map(|d| d.as_secs() as i64)
+                        .unwrap_or(0);
+                    let local = std::time::SystemTime::now()
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .map(|d| d.as_secs() as i64)
+                        .unwrap_or(0);
+                    server - local
+                });
+            match new_skew {
+                Some(ns) => {
+                    EDGE_CLOCK_SKEW.store(ns, std::sync::atomic::Ordering::Relaxed);
+                    let req2 = edge_build_request(ns)?;
+                    match tokio_tungstenite::connect_async(req2).await {
+                        Ok((ws, _)) => ws,
+                        Err(e) => {
+                            return Err(format!(
+                                "edge tts connect failed (after clock resync, skew={}s): {}",
+                                ns, e
+                            ))
+                        }
+                    }
+                }
+                None => return Err("edge tts 403 and could not read/parse the server Date header".into()),
+            }
+        }
+        Err(e) => return Err(format!("edge tts connect failed: {}", e)),
+    };
+    let voice = req
+        .voice
+        .filter(|v| !v.trim().is_empty())
+        .unwrap_or_else(|| "en-US-AriaNeural".into());
+    let rate = req.rate.unwrap_or_else(|| "+0%".into());
+    let pitch = req.pitch.unwrap_or_else(|| "+0Hz".into());
+    let ts = "Thu Jan 01 1970 00:00:00 GMT+0000 (Coordinated Universal Time)";
+    let cfg = format!(
+        "X-Timestamp:{ts}\r\nContent-Type:application/json; charset=utf-8\r\nPath:speech.config\r\n\r\n{{\"context\":{{\"synthesis\":{{\"audio\":{{\"metadataoptions\":{{\"sentenceBoundaryEnabled\":\"false\",\"wordBoundaryEnabled\":\"false\"}},\"outputFormat\":\"audio-24khz-48kbitrate-mono-mp3\"}}}}}}}}"
+    );
+    ws.send(Message::Text(cfg))
+        .await
+        .map_err(|e| e.to_string())?;
+    let ssml = format!(
+        "<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='en-US'><voice name='{voice}'><prosody pitch='{pitch}' rate='{rate}' volume='+0%'>{text}</prosody></voice></speak>",
+        text = edge_xml_escape(&req.text)
+    );
+    let msg = format!(
+        "X-RequestId:{}\r\nContent-Type:application/ssml+xml\r\nX-Timestamp:{ts}Z\r\nPath:ssml\r\n\r\n{ssml}",
+        edge_uuid()
+    );
+    ws.send(Message::Text(msg))
+        .await
+        .map_err(|e| e.to_string())?;
+    let mut audio: Vec<u8> = Vec::new();
+    while let Some(m) = ws.next().await {
+        match m.map_err(|e| e.to_string())? {
+            Message::Binary(b) => {
+                if b.len() < 2 {
+                    continue;
+                }
+                let hlen = ((b[0] as usize) << 8) | (b[1] as usize);
+                if b.len() >= 2 + hlen {
+                    audio.extend_from_slice(&b[2 + hlen..]);
+                }
+            }
+            Message::Text(t) => {
+                if t.contains("Path:turn.end") {
+                    break;
+                }
+            }
+            Message::Close(_) => break,
+            _ => {}
+        }
+    }
+    let _ = ws.close(None).await;
+    if audio.is_empty() {
+        return Err("edge tts: no audio received".into());
+    }
+    use base64::Engine;
+    Ok(base64::engine::general_purpose::STANDARD.encode(&audio))
+}
+
 fn main() {
     tauri::Builder::default()
         .manage(McpState::default())
@@ -1414,6 +1868,7 @@ fn main() {
             groq_transcribe,
             tts_fetch,
             fetch_bytes,
+            read_file_b64,
             open_mic_settings,
             agent_file_read,
             agent_file_write,
@@ -1437,7 +1892,11 @@ fn main() {
             mcp_send,
             mcp_stop,
             mcp_running,
-            mcp_claude_config
+            mcp_claude_config,
+            mcp_server_start,
+            mcp_server_stop,
+            mcp_server_status,
+            edge_tts
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

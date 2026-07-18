@@ -107,7 +107,16 @@
       "Bash(curl -s -o /tmp/k1.wav -w \"http=%{http_code} bytes=%{size_download}\\\\n\" -X POST http://127.0.0.1:5000/tts -H \"Content-Type: application/json\" -d '{\"text\":\"Kite is ready\",\"voice\":\"af_bella\"}')",
       "Bash(curl -s -o /tmp/k2.wav -w \"http=%{http_code} bytes=%{size_download}\\\\n\" -X POST http://127.0.0.1:5000/tts -H \"Content-Type: application/json\" -d '{\"text\":\"Kite is ready\",\"voice\":\"Bella\"}')",
       "Bash(curl -s -D - -o /dev/null -X POST http://127.0.0.1:5000/tts -H \"Content-Type: application/json\" -d '{\"text\":\"hi\",\"voice\":\"af_bella\"}')",
-      "Bash(curl -s -D - -o /dev/null -X POST http://127.0.0.1:5000/tts -H \"Content-Type: application/json\" -d '{\"text\":\"hi\",\"voice\":\"Bella\"}')"
+      "Bash(curl -s -D - -o /dev/null -X POST http://127.0.0.1:5000/tts -H \"Content-Type: application/json\" -d '{\"text\":\"hi\",\"voice\":\"Bella\"}')",
+      "Bash(grep -n \"COMMENT HEADER\\\\|// ===\\\\|/\\\\* ===\\\\|<script\\\\|</script>\\\\|<style\\\\|</style>\" src/index.html)",
+      "Read(//c/Users/praga/whisper-app/**)",
+      "Read(//c/Users/praga/**)",
+      "Bash(awk '{ print NR\": \"length\\($0\\) }' src/index.html)",
+      "Bash(sort -t: -k2 -rn)",
+      "WebFetch(domain:news.google.com)",
+      "PowerShell(Start-Sleep -Seconds 4; $p = Get-Process kite-app -ErrorAction SilentlyContinue; if \\($p\\) { Write-Output \\(\"kite-app running · PID \" + $p.Id + \" · mem \" + [math]::Round\\($p.WorkingSet64/1MB,0\\) + \" MB\"\\) } else { Write-Output \"kite-app NOT running\" })",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(xargs wc -l)"
     ]
   }
 }

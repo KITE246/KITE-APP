@@ -13,14 +13,16 @@ Fox logo: src/assets/logo.png — use everywhere.
 
 CURRENT STATE (what exists right now)
 
-TABS (exactly 5, nothing else):
+TABS:
 
 
 Chat
 Agents
+Swarm      — pseudo-tab 12, live mission canvas (kiteSwarm)
 Connections
 MCP
-API Keys
+
+Models & Keys and Settings live in the Settings modal (gear / Ctrl+,), not as tabs.
 
 
 REMOVED (do not add back):
@@ -30,6 +32,22 @@ Terminal tab
 Projects view
 Workflow canvas
 PTY / xterm.js code
+
+
+TERMINAL — REMOVED AGAIN (2026-07-16)
+
+A real PTY terminal (portable-pty + xterm.js panes) was built and then removed
+at the user's request: it made the machine lag badly. Do not rebuild it without
+being asked directly. If it is ever asked for again, the things that cost time:
+  - This app does NOT set withGlobalTauri, so `window.__TAURI__` does not exist.
+    Use window.__TAURI_INTERNALS__.invoke / window.kiteListen, or import from
+    @tauri-apps/api/core and /event inside a module script.
+  - The parent must drop(pair.slave) after spawn or reads never see EOF.
+  - Panes are expensive: a PTY child + an xterm renderer each. That is the lag.
+
+Note: `window.kiteTerm` is still the OLD terminal-styled chat (kterm-*, driven by
+agent_shell_exec, reachable via voice/palette on tab 8). It is not a real
+terminal and has no PTY. Leave it alone.
 
 
 
